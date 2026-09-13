@@ -135,6 +135,19 @@ def carregar_dados():
         arquivo = open(ARQUIVO_DADOS, "r", encoding="utf-8")
         lista_usuarios = json.load(arquivo)
 
+        # Verifica se o conteúdo principal do JSON é uma lista
+        if isinstance(lista_usuarios, list) == False:
+            print("\nErro: o arquivo de dados possui um formato inválido.")
+            lista_usuarios = []
+
+        else:
+            # Verifica se cada usuário da lista está armazenado como dicionário
+            for usuario in lista_usuarios:
+                if isinstance(usuario, dict) == False:
+                    print("\nErro: o arquivo de dados possui um formato inválido.")
+                    lista_usuarios = []
+                    break
+
     except FileNotFoundError:
         lista_usuarios = []
 
