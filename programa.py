@@ -10,8 +10,8 @@ Záyon Alves Marques - RM 571205 - 1TDSPH
 Zyra - Sprint 3
 Challenge FIAP 2026
 ============================================================
+Usamos " para documentação de funções e # para comentários de linha ou bloco
 '''
-
 
 
 # ============================
@@ -27,14 +27,21 @@ from pathlib import Path
 # CONSTANTES
 # =========================
 
+# Obtém a pasta onde o próprio arquivo Python está salvo
 PASTA_PROGRAMA = Path(__file__).resolve().parent
+
+# Define que o JSON será criado na mesma pasta do programa
 ARQUIVO_DADOS = PASTA_PROGRAMA / "dados_zyra.json"
 
+# Valores fixos utilizados para definir o sistema de pontos e passagens
 BONUS_CADASTRO = 500
 VALOR_PASSAGEM = 5.40
 PONTOS_POR_PASSAGEM = 587
+# Calcula automaticamente quanto cada ponto representa em reais
 VALOR_POR_PONTO = VALOR_PASSAGEM / PONTOS_POR_PASSAGEM
 
+# Tupla com as opções fixas de passagem:
+# (nome, quantidade de viagens, custo em pontos)
 TIPOS_PASSAGEM = (
     ("Unitária", 1, PONTOS_POR_PASSAGEM),
     ("Ida e volta", 2, PONTOS_POR_PASSAGEM * 2),
@@ -54,9 +61,11 @@ def formatar_reais(valor):
 
 def validar_nome(mensagem="Digite o nome do usuário: "):
     """Solicita e retorna um nome válido."""
+    # Repete a entrada até que um nome válido seja informado
     while True:
         nome = input(mensagem).strip()
 
+        # Remove os espaços apenas para verificar se o restante possui somente letras
         if len(nome) >= 3 and nome.replace(" ", "").isalpha():
             return nome
 
@@ -67,6 +76,7 @@ def validar_numero(mensagem):
     """Solicita e retorna um número inteiro validado."""
     numero_texto = input(mensagem).strip()
 
+    # Valida o texto antes da conversão para evitar ValueError nos submenus
     while numero_texto.isdigit() == False:
         print("Erro: digite apenas números.")
         numero_texto = input(mensagem).strip()
@@ -83,15 +93,18 @@ def gerar_id(lista_usuarios):
     """Recebe a lista de usuários e retorna o próximo ID disponível."""
     maior_id = 0
 
+    # Percorre os usuários para localizar o maior ID já utilizado
     for usuario in lista_usuarios:
         if usuario["id"] > maior_id:
             maior_id = usuario["id"]
 
+    # O próximo cadastro recebe um número acima do maior ID encontrado
     return maior_id + 1
 
 
 def buscar_indice_por_id(lista_usuarios, id_usuario):
     """Recebe a lista e um ID e retorna o índice encontrado ou None."""
+    # Procura o ID e retorna a posição correspondente dentro da lista
     for i in range(len(lista_usuarios)):
         if lista_usuarios[i]["id"] == id_usuario:
             return i
@@ -110,6 +123,8 @@ def salvar_dados(lista_usuarios):
     sucesso = False
 
     try:
+        # Abre o arquivo JSON em modo de escrita e salva a lista em formato de texto
+        # Caso o arquivo não exista, ele será criado automaticamente
         arquivo = open(ARQUIVO_DADOS, "w", encoding="utf-8")
         json.dump(lista_usuarios, arquivo, ensure_ascii=False, indent=4)
 
@@ -120,6 +135,7 @@ def salvar_dados(lista_usuarios):
         sucesso = True
 
     finally:
+        # Garante que o arquivo seja fechado mesmo se ocorrer algum erro
         if arquivo is not None:
             arquivo.close()
 
@@ -132,6 +148,7 @@ def carregar_dados():
     lista_usuarios = []
 
     try:
+        # Abre o arquivo salvo anteriormente e converte o JSON para dados do Python
         arquivo = open(ARQUIVO_DADOS, "r", encoding="utf-8")
         lista_usuarios = json.load(arquivo)
 
@@ -149,9 +166,11 @@ def carregar_dados():
                     break
 
     except FileNotFoundError:
+        # Na primeira execução o arquivo ainda pode não existir
         lista_usuarios = []
 
     except (OSError, json.JSONDecodeError) as erro:
+        # Trata problemas de leitura ou um JSON com sintaxe inválida
         print(f"\nErro ao carregar os dados: {erro}")
         lista_usuarios = []
 
@@ -178,6 +197,7 @@ def criar_usuario(id_usuario):
 
     nome = validar_nome()
 
+    # Cada usuário é representado por um dicionário
     return {
         "id": id_usuario,
         "nome": nome,
@@ -191,6 +211,7 @@ def inserir_usuario(lista_usuarios, novo_usuario):
     sucesso = False
 
     try:
+        # Adiciona o novo dicionário à lista principal de usuários
         lista_usuarios.append(novo_usuario)
 
     except (AttributeError, TypeError) as erro:
@@ -218,6 +239,7 @@ def listar_usuarios(lista_usuarios, pausar_ao_final=True):
         print("Nenhum usuário cadastrado.")
 
     else:
+        # Percorre todos os usuários para exibir seus dados e saldo equivalente
         for usuario in lista_usuarios:
             saldo_reais = usuario["pontos"] * VALOR_POR_PONTO
 
@@ -245,6 +267,7 @@ def consultar_usuario(lista_usuarios):
 
     listar_usuarios(lista_usuarios, False)
 
+    # O ID é utilizado para localizar o usuário sem depender da posição exibida
     id_usuario = validar_numero("\nDigite o ID do usuário: ")
     indice = buscar_indice_por_id(lista_usuarios, id_usuario)
 
@@ -299,10 +322,13 @@ def alterar_usuario(lista_usuarios):
 
     if opcao == 1:
         novo_nome = validar_nome("Digite o novo nome: ")
+
+        # Cria uma nova versão mantendo os dados que não foram alterados
         usuario_atualizado = {
             "id": usuario["id"],
             "nome": novo_nome,
             "pontos": usuario["pontos"],
+            # Faz uma cópia do histórico para preservar as trocas anteriores
             "historico": usuario["historico"][:]
         }
 
@@ -323,6 +349,7 @@ def alterar_usuario(lista_usuarios):
     sucesso = False
 
     try:
+        # Substitui somente o cadastro escolhido pela versão atualizada
         lista_usuarios[indice] = usuario_atualizado
 
     except (IndexError, KeyError, TypeError) as erro:
@@ -376,6 +403,7 @@ def excluir_usuario(lista_usuarios):
     sucesso = False
 
     try:
+        # Remove da lista o usuário localizado pelo ID
         lista_usuarios.pop(indice)
 
     except (IndexError, TypeError) as erro:
@@ -403,6 +431,7 @@ def escolher_usuario(lista_usuarios):
         print("Nenhum usuário cadastrado.")
         return None
 
+    # Se houver apenas um cadastro, não é necessário pedir o ID
     if len(lista_usuarios) == 1:
         print("\nUsuário selecionado automaticamente:")
         print(f"ID {lista_usuarios[0]['id']} - {lista_usuarios[0]['nome']}")
@@ -413,6 +442,7 @@ def escolher_usuario(lista_usuarios):
     id_usuario = validar_numero("\nDigite o ID do usuário: ")
     indice = buscar_indice_por_id(lista_usuarios, id_usuario)
 
+    # Continua solicitando até que seja informado um ID existente
     while indice is None:
         print("Erro: usuário inválido.")
         id_usuario = validar_numero("Digite o ID do usuário: ")
@@ -435,6 +465,7 @@ def adicionar_pontos(usuario):
         if pontos <= 0:
             print("Informe um valor maior que zero.")
 
+    # Calcula o novo saldo sem alterar os outros dados do usuário
     novo_saldo = usuario["pontos"] + pontos
 
     usuario_atualizado = {
@@ -461,6 +492,7 @@ def mostrar_passagens():
     print("           PASSAGENS DISPONÍVEIS")
     print("=" * 40)
 
+    # Percorre a tupla de opções para montar o menu de passagens
     for i in range(len(TIPOS_PASSAGEM)):
         passagem = TIPOS_PASSAGEM[i]
 
@@ -488,6 +520,7 @@ def trocar_pontos_por_passagem(usuario):
         if opcao < 1 or opcao > len(TIPOS_PASSAGEM):
             print("Erro: opção inválida.")
 
+    # Como a lista visual começa em 1, subtrai 1 para acessar o índice da tupla
     passagem = TIPOS_PASSAGEM[opcao - 1]
 
     nome_passagem = passagem[0]
@@ -496,11 +529,15 @@ def trocar_pontos_por_passagem(usuario):
     valor_reais = quantidade_viagens * VALOR_PASSAGEM
 
     novo_saldo = usuario["pontos"]
+
+    # Cria uma cópia do histórico antes de registrar uma nova troca
     novo_historico = usuario["historico"][:]
 
+    # A troca só é realizada quando o usuário possui pontos suficientes
     if usuario["pontos"] >= custo:
         novo_saldo -= custo
 
+        # Registra os dados da operação em um novo dicionário
         nova_troca = {
             "passagem": nome_passagem,
             "custo": custo,
@@ -508,6 +545,7 @@ def trocar_pontos_por_passagem(usuario):
             "valor": valor_reais
         }
 
+        # Adiciona a troca ao histórico que será retornado com o usuário
         novo_historico.append(nova_troca)
 
         print("\nTroca realizada com sucesso!")
@@ -541,6 +579,7 @@ def historico_trocas(usuario):
     else:
         print(f"\nHistórico de {usuario['nome']}:")
 
+        # Percorre todas as trocas armazenadas no histórico do usuário
         for troca in usuario["historico"]:
             print(
                 f"[✓] {troca['passagem']} | "
@@ -558,15 +597,18 @@ def resumo_sistema(lista_usuarios):
     print("           RESUMO DO SISTEMA")
     print("=" * 40)
 
+    # Variáveis acumuladoras usadas para calcular os totais do sistema
     total_pontos = 0
     total_operacoes = 0
     total_viagens = 0
     valor_resgatado = 0
 
+    # Percorre todos os usuários e soma seus dados
     for usuario in lista_usuarios:
         total_pontos += usuario["pontos"]
         total_operacoes += len(usuario["historico"])
 
+        # Percorre também o histórico de cada usuário para somar as viagens
         for troca in usuario["historico"]:
             total_viagens += troca["viagens"]
             valor_resgatado += troca["valor"]
@@ -593,6 +635,7 @@ def menu_crud(lista_usuarios):
     """Recebe a lista de usuários e controla o submenu do CRUD."""
     opcao = -1
 
+    # Mantém o submenu aberto até que o usuário escolha voltar
     while opcao != 0:
         print("\n" + "=" * 40)
         print("           GERENCIAR USUÁRIOS")
@@ -609,6 +652,7 @@ def menu_crud(lista_usuarios):
 
         match opcao:
             case 1:
+                # CREATE: gera o ID, cria o usuário e depois salva no arquivo
                 novo_id = gerar_id(lista_usuarios)
                 novo_usuario = criar_usuario(novo_id)
 
@@ -618,16 +662,20 @@ def menu_crud(lista_usuarios):
                 pausar()
 
             case 2:
+                # READ: exibe todos os usuários cadastrados
                 listar_usuarios(lista_usuarios)
 
             case 3:
+                # READ: consulta um cadastro específico pelo ID
                 consultar_usuario(lista_usuarios)
 
             case 4:
+                # UPDATE: salva o arquivo somente quando a alteração é concluída
                 if alterar_usuario(lista_usuarios):
                     salvar_dados(lista_usuarios)
 
             case 5:
+                # DELETE: remove o cadastro e atualiza o arquivo JSON
                 if excluir_usuario(lista_usuarios):
                     salvar_dados(lista_usuarios)
 
@@ -642,6 +690,7 @@ def menu_operacoes(lista_usuarios):
     """Recebe a lista de usuários e controla o submenu de pontos e passagens."""
     opcao = -1
 
+    # Mantém as operações disponíveis até que seja escolhida a opção de voltar
     while opcao != 0:
         print("\n" + "=" * 40)
         print("          PONTOS E PASSAGENS")
@@ -659,6 +708,8 @@ def menu_operacoes(lista_usuarios):
                 indice = escolher_usuario(lista_usuarios)
 
                 if indice is not None:
+                    # A função retorna o usuário atualizado e o main da operação
+                    # substitui somente a posição correspondente na lista
                     lista_usuarios[indice] = adicionar_pontos(
                         lista_usuarios[indice]
                     )
@@ -674,6 +725,7 @@ def menu_operacoes(lista_usuarios):
                 indice = escolher_usuario(lista_usuarios)
 
                 if indice is not None:
+                    # Atualiza o cadastro com o novo saldo e histórico de troca
                     lista_usuarios[indice] = trocar_pontos_por_passagem(
                         lista_usuarios[indice]
                     )
@@ -722,15 +774,18 @@ def exibir_menu():
 
 def main():
     """Carrega os dados e controla o fluxo principal do programa."""
+    # Recupera os dados salvos antes de iniciar a navegação
     lista_usuarios = carregar_dados()
     opcao = -1
 
     exibir_boas_vindas()
 
+    # O programa permanece em execução até que seja escolhida a opção 0
     while opcao != 0:
         exibir_menu()
 
         try:
+            # No menu principal o try/except é utilizado para capturar entradas inválidas
             opcao = int(input("Escolha uma opção: "))
 
         except ValueError:
@@ -757,6 +812,7 @@ def main():
                     resumo_sistema(lista_usuarios)
 
                 case 0:
+                    # Faz um último salvamento antes de encerrar o programa
                     salvar_dados(lista_usuarios)
                     print(
                         "\nPrograma finalizado. "
