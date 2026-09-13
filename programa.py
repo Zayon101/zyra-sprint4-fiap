@@ -48,10 +48,12 @@ TIPOS_PASSAGEM = (
 # =========================
 
 def formatar_reais(valor):
+    """Recebe um valor numérico e retorna o valor formatado em reais."""
     return f"R$ {valor:.2f}".replace(".", ",")
 
 
 def validar_nome(mensagem="Digite o nome do usuário: "):
+    """Solicita e retorna um nome válido."""
     while True:
         nome = input(mensagem).strip()
 
@@ -62,6 +64,7 @@ def validar_nome(mensagem="Digite o nome do usuário: "):
 
 
 def validar_numero(mensagem):
+    """Solicita e retorna um número inteiro validado."""
     numero_texto = input(mensagem).strip()
 
     while numero_texto.isdigit() == False:
@@ -72,10 +75,12 @@ def validar_numero(mensagem):
 
 
 def pausar():
+    """Pausa a execução até o usuário pressionar ENTER."""
     input("\nPressione ENTER para continuar...")
 
 
 def gerar_id(lista_usuarios):
+    """Recebe a lista de usuários e retorna o próximo ID disponível."""
     maior_id = 0
 
     for usuario in lista_usuarios:
@@ -86,6 +91,7 @@ def gerar_id(lista_usuarios):
 
 
 def buscar_indice_por_id(lista_usuarios, id_usuario):
+    """Recebe a lista e um ID e retorna o índice encontrado ou None."""
     for i in range(len(lista_usuarios)):
         if lista_usuarios[i]["id"] == id_usuario:
             return i
@@ -99,6 +105,7 @@ def buscar_indice_por_id(lista_usuarios, id_usuario):
 # =========================
 
 def salvar_dados(lista_usuarios):
+    """Recebe a lista de usuários e salva os dados no arquivo JSON."""
     arquivo = None
     sucesso = False
 
@@ -120,6 +127,7 @@ def salvar_dados(lista_usuarios):
 
 
 def carregar_dados():
+    """Carrega os dados do arquivo JSON e retorna a lista de usuários."""
     arquivo = None
     lista_usuarios = []
 
@@ -150,6 +158,7 @@ def carregar_dados():
 # =========================
 
 def criar_usuario(id_usuario):
+    """Recebe um ID e retorna um novo usuário em formato de dicionário."""
     print("\n" + "=" * 40)
     print("           CADASTRO DE USUÁRIO")
     print("=" * 40)
@@ -165,6 +174,7 @@ def criar_usuario(id_usuario):
 
 
 def inserir_usuario(lista_usuarios, novo_usuario):
+    """Recebe a lista e um usuário, insere o cadastro e retorna o resultado."""
     sucesso = False
 
     try:
@@ -186,6 +196,7 @@ def inserir_usuario(lista_usuarios, novo_usuario):
 
 
 def listar_usuarios(lista_usuarios, pausar_ao_final=True):
+    """Recebe a lista de usuários e exibe os cadastros existentes."""
     print("\n" + "=" * 40)
     print("           USUÁRIOS CADASTRADOS")
     print("=" * 40)
@@ -209,6 +220,7 @@ def listar_usuarios(lista_usuarios, pausar_ao_final=True):
 
 
 def consultar_usuario(lista_usuarios):
+    """Recebe a lista de usuários e permite consultar um cadastro por ID."""
     print("\n" + "=" * 40)
     print("           CONSULTAR USUÁRIO")
     print("=" * 40)
@@ -239,6 +251,7 @@ def consultar_usuario(lista_usuarios):
 
 
 def alterar_usuario(lista_usuarios):
+    """Recebe a lista de usuários e altera nome ou pontos de um cadastro."""
     print("\n" + "=" * 40)
     print("            ALTERAR USUÁRIO")
     print("=" * 40)
@@ -314,6 +327,7 @@ def alterar_usuario(lista_usuarios):
 
 
 def excluir_usuario(lista_usuarios):
+    """Recebe a lista de usuários e remove um cadastro pelo ID."""
     print("\n" + "=" * 40)
     print("            EXCLUIR USUÁRIO")
     print("=" * 40)
@@ -371,6 +385,7 @@ def excluir_usuario(lista_usuarios):
 # =========================
 
 def escolher_usuario(lista_usuarios):
+    """Recebe a lista de usuários e retorna o índice do usuário escolhido."""
     if len(lista_usuarios) == 0:
         print("Nenhum usuário cadastrado.")
         return None
@@ -394,6 +409,7 @@ def escolher_usuario(lista_usuarios):
 
 
 def adicionar_pontos(usuario):
+    """Recebe um usuário e retorna seus dados com o saldo atualizado."""
     print("\n" + "=" * 40)
     print("           ADICIONAR PONTOS")
     print("=" * 40)
@@ -427,6 +443,7 @@ def adicionar_pontos(usuario):
 
 
 def mostrar_passagens():
+    """Exibe as opções de passagens disponíveis no sistema."""
     print("\n" + "=" * 40)
     print("           PASSAGENS DISPONÍVEIS")
     print("=" * 40)
@@ -443,6 +460,7 @@ def mostrar_passagens():
 
 
 def trocar_pontos_por_passagem(usuario):
+    """Recebe um usuário e retorna seus dados após a tentativa de troca."""
     print("\n" + "=" * 40)
     print("           TROCA DE PONTOS")
     print("=" * 40)
@@ -499,6 +517,7 @@ def trocar_pontos_por_passagem(usuario):
 
 
 def historico_trocas(usuario):
+    """Recebe um usuário e exibe seu histórico de trocas."""
     print("\n" + "=" * 40)
     print("           HISTÓRICO DE TROCAS")
     print("=" * 40)
@@ -521,6 +540,7 @@ def historico_trocas(usuario):
 
 
 def resumo_sistema(lista_usuarios):
+    """Recebe a lista de usuários e exibe as informações gerais do sistema."""
     print("\n" + "=" * 40)
     print("           RESUMO DO SISTEMA")
     print("=" * 40)
@@ -557,6 +577,7 @@ def resumo_sistema(lista_usuarios):
 # =========================
 
 def menu_crud(lista_usuarios):
+    """Recebe a lista de usuários e controla o submenu do CRUD."""
     opcao = -1
 
     while opcao != 0:
@@ -605,6 +626,7 @@ def menu_crud(lista_usuarios):
 
 
 def menu_operacoes(lista_usuarios):
+    """Recebe a lista de usuários e controla o submenu de pontos e passagens."""
     opcao = -1
 
     while opcao != 0:
@@ -659,6 +681,7 @@ def menu_operacoes(lista_usuarios):
 # =========================
 
 def exibir_boas_vindas():
+    """Exibe a tela inicial do sistema."""
     print("\n" + "=" * 40)
     print("        Bem-vindo ao ZYRA")
     print("     Converta pontos SoulUp em")
@@ -671,6 +694,7 @@ def exibir_boas_vindas():
 
 
 def exibir_menu():
+    """Exibe as opções do menu principal."""
     print("\n" + "=" * 40)
     print("                 ZYRA")
     print("=" * 40)
@@ -684,6 +708,7 @@ def exibir_menu():
 
 
 def main():
+    """Carrega os dados e controla o fluxo principal do programa."""
     lista_usuarios = carregar_dados()
     opcao = -1
 
