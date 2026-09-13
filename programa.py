@@ -10,7 +10,7 @@ Záyon Alves Marques - RM 571205 - 1TDSPH
 Zyra - Sprint 3
 Challenge FIAP 2026
 ============================================================
-Usamos " para documentação de funções e # para comentários de linha ou bloco
+Utilizamos """ para documentação de funções e # para comentários de linha ou bloco
 '''
 
 
@@ -175,7 +175,8 @@ def carregar_dados():
         lista_usuarios = []
 
     else:
-        print("Dados carregados com sucesso.")
+        if len(lista_usuarios) > 0:
+            print("Dados carregados com sucesso.")
 
     finally:
         if arquivo is not None:
@@ -708,8 +709,8 @@ def menu_operacoes(lista_usuarios):
                 indice = escolher_usuario(lista_usuarios)
 
                 if indice is not None:
-                    # A função retorna o usuário atualizado e o main da operação
-                    # substitui somente a posição correspondente na lista
+                    # A função retorna o usuário atualizado e substitui
+                    # somente a posição correspondente na lista
                     lista_usuarios[indice] = adicionar_pontos(
                         lista_usuarios[indice]
                     )
