@@ -1,0 +1,13 @@
+# Dados locais e credenciais
+/dados_zyra.json
+.env
+.env.*
+!.env.example
+
+# Ambiente Python e arquivos temporários
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.idea/
