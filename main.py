@@ -1,8 +1,9 @@
-"""Ponto de entrada do Zyra - Sprint 4 (Etapa 1: organização)."""
+"""Ponto de entrada do Zyra - Sprint 4 (Etapa 2: conexão Oracle)."""
 
 from menus import exibir_boas_vindas, exibir_menu, menu_crud, menu_operacoes
 from operacoes import escolher_usuario, historico_trocas, resumo_sistema
 from persistencia import carregar_dados, salvar_dados
+from utils import pausar
 
 
 def main():
