@@ -1,6 +1,6 @@
-# Zyra — Sprint 4 | Etapa 2: Oracle da FIAP
+# Zyra — Sprint 4 | Etapa 3: CRUD com Oracle
 
-Continuação do projeto da Sprint 3. Nesta etapa foi preparada a **conexão com Oracle** e o **esquema SQL** com usuários e trocas de passagem, sem substituir ainda a persistência JSON existente.
+Continuação direta da Etapa 2 validada no Oracle da FIAP. Os menus agora operam sobre as tabelas **`ZYRA_USUARIOS`** e **`ZYRA_TROCAS`**. A antiga persistência JSON foi substituída pelo banco, que passou a ser a **fonte principal dos dados**.
 
 ## Integrantes
 
@@ -10,141 +10,121 @@ Continuação do projeto da Sprint 3. Nesta etapa foi preparada a **conexão com
 - João Gabriel Dantas Moura — RM 573101 — 1TDSPH
 - Záyon Alves Marques — RM 571205 — 1TDSPH
 
-## Antes de começar
+## Passo a passo no Windows (VS Code)
 
-- Ter Python 3.10 ou mais recente (necessário para `match/case`).
-- Ter acesso ao **Oracle da FIAP** e informações de conexão (usuário, senha, host, porta e *SID* ou *nome do serviço*).
-- Estar conectado à rede que permite acesso ao banco da FIAP, se houver restrição de rede.
-- Ter permissão para criar tabelas e índices no esquema do seu usuário.
-- Por padrão, `python-oracledb` usa o **modo Thin**, sem precisar instalar Oracle Instant Client. Se o servidor exigir driver Thick, precisaremos ajustar isso posteriormente.
+**1.** Extraia o ZIP em uma pasta nova. **Não substitua nem apague sua pasta da Etapa 2.**
 
-## Instalação passo a passo (Windows)
+**2.** Copie o arquivo **`.env` preenchido da Etapa 2** para a pasta da Etapa 3. O ZIP só contém o modelo `.env.example` porque não deve transportar suas credenciais.
 
-No terminal, dentro da pasta extraída:
-
-**1. Instale as dependências:**
+**3.** No terminal, dentro da pasta da Etapa 3, instale as dependências (se já instaladas, nada relevante será alterado):
 
 ```powershell
 py -m pip install -r requirements.txt
 ```
 
-**2. Crie seu arquivo de configuração:**
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Abra `.env` no editor e preencha **com seus próprios dados**, conforme a conexão Oracle usada na FIAP:
-
-```dotenv
-ORACLE_USER=SEU_USUARIO
-ORACLE_PASSWORD=SUA_SENHA
-ORACLE_HOST=HOST_FORNECIDO_PELA_FIAP
-ORACLE_PORT=1521
-ORACLE_SERVICE_NAME=
-ORACLE_SID=SEU_SID
-```
-
-**Atenção:** acima há só um exemplo com SID. Se a conexão utiliza **nome do serviço**, deixe `ORACLE_SID=` vazio e preencha `ORACLE_SERVICE_NAME=`. Use exatamente uma das duas opções. A porta 1521 é um valor usual, mas a configuração real da FIAP prevalece.
-
-Não adicione aspas à senha, a menos que seja necessário representá-la corretamente no `.env`. O programa lê `.env` da pasta do projeto. Não compartilhe esse arquivo.
-
-**3. Teste a conexão, sem criar nem alterar nada:**
+**4.** Confira que as tabelas já criadas continuam acessíveis:
 
 ```powershell
 py testar_banco.py
 ```
 
-Resultado esperado, antes da criação das tabelas:
+As duas tabelas devem aparecer com `[OK]`. **Não execute `preparar_banco.py` novamente se as tabelas já estão criadas.**
 
-```text
-[OK] Conexão estabelecida! Usuário Oracle: ...
-[FALTA] ZYRA_TROCAS
-[FALTA] ZYRA_USUARIOS
-```
-
-**4. Crie as tabelas do Zyra:**
-
-```powershell
-py preparar_banco.py
-```
-
-O programa executa o conteúdo de `criar_tabelas.sql`, na ordem correta. Verifica primeiro se os objetos já existem e **não apaga tabelas nem dados**. Na segunda execução, deverá indicar que os objetos já existem.
-
-**5. Teste novamente:**
-
-```powershell
-py testar_banco.py
-```
-
-Resultado esperado:
-
-```text
-[OK] Conexão estabelecida! Usuário Oracle: ...
-[OK] ZYRA_TROCAS
-[OK] ZYRA_USUARIOS
-```
-
-**6. Execute o Zyra:**
+**5.** Execute o Zyra conectado ao banco:
 
 ```powershell
 py main.py
 ```
 
-> Nesta Etapa 2 o programa principal ainda lê e salva `dados_zyra.json`. **Não insere usuários no Oracle automaticamente**. Isso será feito na **Etapa 3**, quando migraremos as operações do CRUD. Não apague o JSON antigo.
+Os submenus continuam sendo `Gerenciar usuários`, `Pontos e passagens`, `Histórico de trocas` e `Resumo do sistema`.
 
-## Opção: executar SQL pelo Oracle SQL Developer
+## Testar cada operação do CRUD
 
-Se preferir, abra `criar_tabelas.sql` no SQL Developer, conecte-se com o usuário da FIAP e execute o script uma única vez (F5, *Run Script*). Depois use `py testar_banco.py` para conferir a conexão pelo Python. Se as tabelas já existirem, não execute `CREATE TABLE` novamente.
+No menu **1. Gerenciar usuários**:
 
-Para visualizar os objetos pelo SQL Developer:
+1. Cadastre um usuário de teste; anote o ID gerado automaticamente pelo Oracle e confirme o bônus de 500 pontos (**CREATE**).
+2. Liste todos os usuários e consulte o novo cadastro por ID (**READ**).
+3. Altere o nome e o saldo; consulte novamente para confirmar a atualização (**UPDATE**).
+4. Exclua o usuário de teste após confirmação; consulte o mesmo ID e verifique que não existe (**DELETE**).
+5. Encerre o programa e execute novamente. Os dados deverão refletir diretamente o conteúdo atual do banco.
 
-```sql
-SELECT TABLE_NAME FROM USER_TABLES
-WHERE TABLE_NAME IN ('ZYRA_USUARIOS', 'ZYRA_TROCAS');
+### Verificação automática opcional no Oracle real
+
+```powershell
+py validar_crud_oracle.py
 ```
 
-## Como as tabelas foram modeladas
+O script pede a confirmação `TESTAR`, cria **um usuário temporário próprio**, executa CREATE, READ, UPDATE e DELETE e tenta remover esse cadastro ao final, mesmo que algo falhe. Não executa alterações em outros usuários. Use somente na conta Oracle da equipe e confira eventual alerta de falha de limpeza.
 
-**`ZYRA_USUARIOS`:** ID autogerado, nome obrigatório, saldo de pontos (padrão de 500) e restrição de saldo não negativo.
+## Regras de pontos e passagens
 
-**`ZYRA_TROCAS`:** ID autogerado, referência ao usuário, tipo da passagem, quantidade de viagens, custo em pontos, valor em reais e data/hora. Um usuário pode possuir várias trocas.
+Para evitar que o sistema mantenha saldos diferentes no JSON e no Oracle, as operações básicas de pontos também passaram a ser gravadas no banco **já nesta etapa**:
 
-A chave estrangeira utiliza `ON DELETE CASCADE`: **excluir um usuário apagará também seus registros de troca**. Isso mantém o comportamento anterior, no qual excluir um usuário também removia seu histórico. Mais adiante, se o trabalho exigir auditoria histórica, podemos rever essa decisão.
+- Cadastrar usuário concede bônus de 500 pontos.
+- Adicionar pontos atualiza `ZYRA_USUARIOS.PONTOS` sem sobrescrever alterações de outra execução.
+- Resgatar uma passagem exige pontos suficientes e registra a operação em `ZYRA_TROCAS`.
+- O desconto e o histórico da troca são confirmados **juntos**, na mesma transação; se qualquer operação falhar, ambos são desfeitos.
+- Histórico de trocas e resumo consultam o conteúdo atual do banco.
 
-As tabelas usam prefixo `ZYRA_` para evitar colisão com tabelas de outras atividades da FIAP. As colunas de ID utilizam `GENERATED BY DEFAULT ON NULL AS IDENTITY`, disponível no Oracle 12c ou superior. Se o servidor da FIAP for uma versão mais antiga, será necessário adaptar o script com sequências (e possivelmente triggers) e o modo de conexão do driver.
+A Etapa 4 poderá aprofundar as regras de negócio, validações, rastreabilidade e casos de teste. A exportação das consultas SQL para JSON ainda será implementada na **Etapa 5**, como consta no roteiro.
 
-## Arquivos novos da Etapa 2
+## Se você já tem dados antigos da Sprint 3
 
-| Arquivo | Finalidade |
+O programa novo **não lê `dados_zyra.json` automaticamente**. Isso evita divergência entre o arquivo e o banco.
+
+Para importar os usuários e históricos de um JSON anterior:
+
+1. Faça um backup do `dados_zyra.json` antigo e mantenha-o na pasta da Etapa 2 ou em outro local seguro.
+2. Copie uma versão desse arquivo para a pasta da Etapa 3.
+3. Confira que **não existem usuários cadastrados em `ZYRA_USUARIOS`**. A importação não apaga nem sobrescreve os existentes.
+4. Execute:
+
+   ```powershell
+   py importar_json.py
+   ```
+
+5. O script valida o arquivo e pede para digitar `IMPORTAR`. Todos os usuários e respectivos históricos são importados em uma única transação. Em caso de erro, nenhuma importação parcial é confirmada.
+6. **O Oracle gera novos IDs.** O programa mostra o mapeamento do ID antigo para o novo. Não execute a importação novamente.
+
+Se você não tiver cadastros antigos que precise preservar, ignore totalmente esse passo. Se **já houver usuários no Oracle**, não apague nada para forçar a importação: é melhor avaliar uma mesclagem na etapa seguinte.
+
+## Arquivos principais
+
+| Arquivo | Responsabilidade |
 | --- | --- |
-| `banco.py` | Carregar configurações, validar parâmetros e conectar ao Oracle |
-| `.env.example` | Modelo de configuração **sem credenciais** |
-| `requirements.txt` | Instalação do driver Oracle e leitura do `.env` |
-| `criar_tabelas.sql` | Estrutura SQL de usuários, trocas e índice |
-| `testar_banco.py` | Teste de conexão e diagnóstico de tabelas (*somente SELECT*) |
-| `preparar_banco.py` | Criação dos objetos se não existirem |
-| `tests/test_etapa2.py` | Testes locais de configuração, SQL e simulações de conexão |
+| `main.py` | Entrada da aplicação, gerenciamento da conexão e mensagens de falha |
+| `menus.py` | Navegação pelos menus e submenus |
+| `usuarios.py` | Interação no terminal para CREATE, READ, UPDATE e DELETE |
+| `repositorio.py` | SQL parametrizado e transações Oracle (CRUD, pontos e trocas) |
+| `operacoes.py` | Regras de pontos, passagens e apresentação de histórico/resumo |
+| `banco.py` | Configuração do `.env` e conexão Oracle |
+| `importar_json.py` | Migração opcional, validada e não destrutiva do JSON anterior |
+| `validar_crud_oracle.py` | Teste opt-in do CRUD no Oracle real |
+| `constantes.py` | Regras fixas de pontuação e passagens |
+| `utils.py` | Validação de entradas e formatação de valores |
+| `tests/` | Testes locais e simulações de conexão/SQL |
+| `programa_sprint3_original.py` | Cópia preservada da entrega anterior |
 
-Os módulos existentes permanecem. `main.py` recebeu também a correção de um import da função `pausar()` que faltava no caminho do histórico sem usuários.
+O script `criar_tabelas.sql` foi preservado sem modificações porque a estrutura da Etapa 2 já foi criada no banco.
 
-## Executar testes automatizados
+## Testes automatizados locais
 
 ```powershell
 py -m unittest discover -s tests -v
 ```
 
-Os testes de configuração e SQL usam simulações: **passar nesses testes não comprova que o Oracle da FIAP está acessível**. Só o teste com suas próprias credenciais e acesso à rede valida a conexão real.
+As simulações de CRUD usam **SQLite apenas dentro dos testes**, como substituto controlado para avaliar a lógica SQL e as transações. O projeto principal usa **Oracle exclusivamente**. Esses testes **não comprovam** a execução real na FIAP: execute também `validar_crud_oracle.py` ou faça as operações manualmente no banco real.
 
-## Segurança e observações
+## Segurança e limitações
 
-- O arquivo `.env` já está excluído do controle de versão pelo `.gitignore`.
-- Nunca coloque senhas no código ou em prints dos testes.
-- Não execute os scripts com SYS, SYSTEM ou a conta de outra pessoa: use o esquema do grupo/aluno.
-- As rotinas não criam usuários fictícios nem apagam registros do Oracle nesta etapa.
-- Se ocorrer erro de rede, serviço, permissão ou versão de banco, anote **o código ORA/DPY**, mas não compartilhe a senha.
-- Documente no relatório e no vídeo da Sprint 4 o papel da assistência por IA e as decisões revisadas pela equipe, conforme o enunciado.
+- Nunca compartilhe `.env`, senha, host restrito, backups com dados pessoais nem capturas contendo credenciais.
+- Use `INSERT`, `SELECT`, `UPDATE`, `DELETE` com parâmetros vinculados (bind variables), nunca concatenação de entradas do usuário dentro do SQL.
+- O banco Oracle gera os IDs de usuários; não se calcula o próximo ID percorrendo listas.
+- A tabela `ZYRA_TROCAS` possui uma chave estrangeira com `ON DELETE CASCADE`: excluir um usuário também elimina o histórico dele. Confirme antes de apagar dados reais.
+- Não execute `criar_tabelas.sql` nem scripts de reset desnecessariamente.
+- A comunicação com o front-end e o consumo de API pública serão tratados em etapas posteriores.
+- Registre o uso de IA e as decisões e testes revisados pela equipe no documento e no vídeo, conforme o enunciado.
 
 ## Próxima etapa
 
-**Etapa 3:** migrar CREATE, READ, UPDATE e DELETE do módulo de usuários para consultas SQL com variáveis vinculadas, transações e erros tratados. Somente depois migraremos pontos, trocas e histórico na Etapa 4.
+**Etapa 4:** refinar e validar regras de pontos, passagens, histórico e tratamento de erros no Oracle; em seguida, **Etapa 5:** exportar consultas para JSON.

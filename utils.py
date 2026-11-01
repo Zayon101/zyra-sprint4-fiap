@@ -35,25 +35,3 @@ def pausar():
     """Pausa a execução até o usuário pressionar ENTER."""
     input("\nPressione ENTER para continuar...")
 
-
-def gerar_id(lista_usuarios):
-    """Recebe a lista de usuários e retorna o próximo ID disponível."""
-    maior_id = 0
-
-    # Percorre os usuários para localizar o maior ID já utilizado
-    for usuario in lista_usuarios:
-        if usuario["id"] > maior_id:
-            maior_id = usuario["id"]
-
-    # O próximo cadastro recebe um número acima do maior ID encontrado
-    return maior_id + 1
-
-
-def buscar_indice_por_id(lista_usuarios, id_usuario):
-    """Recebe a lista e um ID e retorna o índice encontrado ou None."""
-    # Procura o ID e retorna a posição correspondente dentro da lista
-    for i in range(len(lista_usuarios)):
-        if lista_usuarios[i]["id"] == id_usuario:
-            return i
-
-    return None

@@ -1,241 +1,120 @@
-"""CRUD de usuários da Sprint 3, preservado para posterior migração ao SQL."""
+"""Interações do CRUD de usuários; acesso SQL isolado em repositorio.py."""
 
 from constantes import BONUS_CADASTRO, VALOR_POR_PONTO
-from utils import (
-    buscar_indice_por_id,
-    formatar_reais,
-    pausar,
-    validar_nome,
-    validar_numero,
-)
+from utils import formatar_reais, pausar, validar_nome, validar_numero
 
 
-def criar_usuario(id_usuario):
-    """Recebe um ID e retorna um novo usuário em formato de dicionário."""
-    print("\n" + "=" * 40)
-    print("           CADASTRO DE USUÁRIO")
-    print("=" * 40)
-
-    nome = validar_nome()
-
-    # Cada usuário é representado por um dicionário
-    return {
-        "id": id_usuario,
-        "nome": nome,
-        "pontos": BONUS_CADASTRO,
-        "historico": []
-    }
-
-
-def inserir_usuario(lista_usuarios, novo_usuario):
-    """Recebe a lista e um usuário, insere o cadastro e retorna o resultado."""
-    sucesso = False
-
-    try:
-        # Adiciona o novo dicionário à lista principal de usuários
-        lista_usuarios.append(novo_usuario)
-
-    except (AttributeError, TypeError) as erro:
-        print(f"\nErro ao cadastrar usuário: {erro}")
-
-    else:
-        sucesso = True
-        print("\nUsuário cadastrado com sucesso!")
-        print(f"ID: {novo_usuario['id']}")
-        print(f"Bônus inicial: {novo_usuario['pontos']} pontos")
-
-    finally:
-        print("Operação de cadastro finalizada.")
-
-    return sucesso
-
-
-def listar_usuarios(lista_usuarios, pausar_ao_final=True):
-    """Recebe a lista de usuários e exibe os cadastros existentes."""
+def listar_usuarios(repositorio, pausar_ao_final=True):
+    """Exibe os cadastros consultados no Oracle e devolve os resultados."""
+    usuarios = repositorio.listar_usuarios()
     print("\n" + "=" * 40)
     print("           USUÁRIOS CADASTRADOS")
     print("=" * 40)
-
-    if len(lista_usuarios) == 0:
+    if not usuarios:
         print("Nenhum usuário cadastrado.")
-
     else:
-        # Percorre todos os usuários para exibir seus dados e saldo equivalente
-        for usuario in lista_usuarios:
-            saldo_reais = usuario["pontos"] * VALOR_POR_PONTO
-
+        for usuario in usuarios:
+            reais = usuario["pontos"] * VALOR_POR_PONTO
             print(
-                f"ID {usuario['id']} | "
-                f"{usuario['nome']} | "
-                f"{usuario['pontos']} pontos | "
-                f"{formatar_reais(saldo_reais)}"
+                f"ID {usuario['id']} | {usuario['nome']} | "
+                f"{usuario['pontos']} pontos | {formatar_reais(reais)}"
             )
-
     if pausar_ao_final:
         pausar()
+    return usuarios
 
 
-def consultar_usuario(lista_usuarios):
-    """Recebe a lista de usuários e permite consultar um cadastro por ID."""
+def cadastrar_usuario(repositorio):
+    """Solicita um nome e faz INSERT no banco por meio do repositório."""
+    print("\n" + "=" * 40)
+    print("           CADASTRO DE USUÁRIO")
+    print("=" * 40)
+    nome = validar_nome()
+    id_usuario = repositorio.criar_usuario(nome)
+    print(f"\nUsuário cadastrado com sucesso! ID: {id_usuario}")
+    print(f"Bônus inicial: {BONUS_CADASTRO} pontos")
+    pausar()
+
+
+def consultar_usuario(repositorio):
+    """Consulta o usuário por ID usando SELECT parametrizado."""
     print("\n" + "=" * 40)
     print("           CONSULTAR USUÁRIO")
     print("=" * 40)
-
-    if len(lista_usuarios) == 0:
-        print("Nenhum usuário cadastrado.")
+    if not listar_usuarios(repositorio, False):
         pausar()
         return
 
-    listar_usuarios(lista_usuarios, False)
-
-    # O ID é utilizado para localizar o usuário sem depender da posição exibida
     id_usuario = validar_numero("\nDigite o ID do usuário: ")
-    indice = buscar_indice_por_id(lista_usuarios, id_usuario)
-
-    if indice is None:
+    usuario = repositorio.consultar_usuario(id_usuario)
+    if usuario is None:
         print("Erro: usuário não encontrado.")
-
     else:
-        usuario = lista_usuarios[indice]
-
         print("\nUsuário encontrado:")
         print(f"ID: {usuario['id']}")
         print(f"Nome: {usuario['nome']}")
         print(f"Pontos: {usuario['pontos']}")
         print(f"Trocas realizadas: {len(usuario['historico'])}")
-
     pausar()
 
 
-def alterar_usuario(lista_usuarios):
-    """Recebe a lista de usuários e altera nome ou pontos de um cadastro."""
+def alterar_usuario(repositorio):
+    """Atualiza nome ou pontos de um cadastro identificado por ID."""
     print("\n" + "=" * 40)
     print("            ALTERAR USUÁRIO")
     print("=" * 40)
-
-    if len(lista_usuarios) == 0:
-        print("Nenhum usuário cadastrado.")
+    if not listar_usuarios(repositorio, False):
         pausar()
-        return False
-
-    listar_usuarios(lista_usuarios, False)
+        return
 
     id_usuario = validar_numero("\nDigite o ID do usuário: ")
-    indice = buscar_indice_por_id(lista_usuarios, id_usuario)
-
-    if indice is None:
+    if repositorio.consultar_usuario(id_usuario) is None:
         print("Erro: usuário não encontrado.")
         pausar()
-        return False
-
-    usuario = lista_usuarios[indice]
+        return
 
     print("\n[1] Alterar nome")
     print("[2] Alterar pontos")
     print("[0] Cancelar")
-
     opcao = validar_numero("Escolha uma opção: ")
-
-    if opcao == 0:
+    if opcao == 1:
+        sucesso = repositorio.alterar_nome(id_usuario, validar_nome("Digite o novo nome: "))
+    elif opcao == 2:
+        sucesso = repositorio.alterar_pontos(id_usuario, validar_numero("Digite o novo saldo em pontos: "))
+    elif opcao == 0:
         print("Alteração cancelada.")
         pausar()
-        return False
-
-    if opcao == 1:
-        novo_nome = validar_nome("Digite o novo nome: ")
-
-        # Cria uma nova versão mantendo os dados que não foram alterados
-        usuario_atualizado = {
-            "id": usuario["id"],
-            "nome": novo_nome,
-            "pontos": usuario["pontos"],
-            # Faz uma cópia do histórico para preservar as trocas anteriores
-            "historico": usuario["historico"][:]
-        }
-
-    elif opcao == 2:
-        novos_pontos = validar_numero("Digite o novo saldo em pontos: ")
-        usuario_atualizado = {
-            "id": usuario["id"],
-            "nome": usuario["nome"],
-            "pontos": novos_pontos,
-            "historico": usuario["historico"][:]
-        }
-
+        return
     else:
         print("Erro: opção inválida.")
         pausar()
-        return False
-
-    sucesso = False
-
-    try:
-        # Substitui somente o cadastro escolhido pela versão atualizada
-        lista_usuarios[indice] = usuario_atualizado
-
-    except (IndexError, KeyError, TypeError) as erro:
-        print(f"\nErro ao alterar usuário: {erro}")
-
-    else:
-        sucesso = True
-        print("\nUsuário alterado com sucesso!")
-
-    finally:
-        print("Operação de alteração finalizada.")
-
+        return
+    print("\nUsuário alterado com sucesso!" if sucesso else "Usuário não encontrado.")
     pausar()
-    return sucesso
 
 
-def excluir_usuario(lista_usuarios):
-    """Recebe a lista de usuários e remove um cadastro pelo ID."""
+def excluir_usuario(repositorio):
+    """Exclui um cadastro do Oracle apenas após confirmação."""
     print("\n" + "=" * 40)
     print("            EXCLUIR USUÁRIO")
     print("=" * 40)
-
-    if len(lista_usuarios) == 0:
-        print("Nenhum usuário cadastrado.")
+    if not listar_usuarios(repositorio, False):
         pausar()
-        return False
-
-    listar_usuarios(lista_usuarios, False)
+        return
 
     id_usuario = validar_numero("\nDigite o ID do usuário: ")
-    indice = buscar_indice_por_id(lista_usuarios, id_usuario)
-
-    if indice is None:
+    usuario = repositorio.consultar_usuario(id_usuario)
+    if usuario is None:
         print("Erro: usuário não encontrado.")
         pausar()
-        return False
-
-    usuario = lista_usuarios[indice]
-
+        return
     print(f"\nExcluir o usuário {usuario['nome']}?")
     print("[1] Sim")
     print("[2] Não")
-
-    confirmacao = validar_numero("Escolha uma opção: ")
-
-    if confirmacao != 1:
+    if validar_numero("Escolha uma opção: ") != 1:
         print("Exclusão cancelada.")
-        pausar()
-        return False
-
-    sucesso = False
-
-    try:
-        # Remove da lista o usuário localizado pelo ID
-        lista_usuarios.pop(indice)
-
-    except (IndexError, TypeError) as erro:
-        print(f"\nErro ao excluir usuário: {erro}")
-
-    else:
-        sucesso = True
+    elif repositorio.excluir_usuario(id_usuario):
         print("\nUsuário excluído com sucesso!")
-
-    finally:
-        print("Operação de exclusão finalizada.")
-
+    else:
+        print("Usuário não encontrado.")
     pausar()
-    return sucesso

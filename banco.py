@@ -1,8 +1,4 @@
-"""Configuração e conexão com o Oracle da FIAP (Sprint 4, Etapa 2).
-
-Nesta etapa, a conexão ainda não altera as funcionalidades do Zyra:
-o programa principal continua usando o JSON até a migração do CRUD.
-"""
+"""Configuração e conexão com o Oracle da FIAP (Sprint 4)."""
 
 import os
 from dataclasses import dataclass, field
@@ -82,7 +78,7 @@ def conectar(configuracao=None):
     if configuracao is None:
         configuracao = carregar_configuracao()
 
-    # Importar aqui permite executar o Zyra (ainda em JSON) sem este driver.
+    # Importação sob demanda: configuração pode ser testada sem o driver.
     import oracledb
 
     parametros = {

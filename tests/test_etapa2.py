@@ -133,16 +133,20 @@ class TestesEtapa2(unittest.TestCase):
         self.assertTrue(all(sql.startswith("SELECT") for sql in consultas))
 
     def test_menu_historico_vazio_pausa_sem_name_error(self):
-        with (patch("main.carregar_dados", return_value=[]),
-              patch("main.salvar_dados"),
-              patch("main.exibir_boas_vindas"),
-              patch("main.exibir_menu"),
-              patch("main.escolher_usuario", return_value=None),
-              patch("main.pausar") as pausar,
-              patch("builtins.input", side_effect=["3", "0"]),
-              contextlib.redirect_stdout(io.StringIO())):
-            main.main()
-        pausar.assert_called_once_with()
+        from tests.oracle_simulado import ConexaoSimulada
+        conexao = ConexaoSimulada()
+        try:
+            with (patch("main.conectar", return_value=conexao),
+                  patch("main.exibir_boas_vindas"),
+                  patch("main.exibir_menu"),
+                  patch("builtins.input", side_effect=["3", "", "0"]),
+                  contextlib.redirect_stdout(io.StringIO()) as saida):
+                main.main()
+            self.assertIn("Nenhum usuário cadastrado", saida.getvalue())
+            self.assertTrue(conexao.fechada)
+        finally:
+            if not conexao.fechada:
+                conexao.close()
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-# O arquivo de dados continua ao lado do código enquanto o banco é preparado.
+# Arquivo legado usado apenas para a importação opcional da Sprint 3.
 PASTA_PROGRAMA = Path(__file__).resolve().parent
 ARQUIVO_DADOS = PASTA_PROGRAMA / "dados_zyra.json"
 

@@ -1,206 +1,131 @@
-"""Regras de pontos, passagens, histórico e resumo do Zyra."""
+"""Pontos, passagens, histórico e estatísticas usando o banco Oracle."""
 
 from constantes import TIPOS_PASSAGEM, VALOR_PASSAGEM, VALOR_POR_PONTO
 from usuarios import listar_usuarios
-from utils import buscar_indice_por_id, formatar_reais, pausar, validar_numero
+from utils import formatar_reais, pausar, validar_numero
 
 
-def escolher_usuario(lista_usuarios):
-    """Recebe a lista de usuários e retorna o índice do usuário escolhido."""
-    if len(lista_usuarios) == 0:
+def escolher_usuario(repositorio):
+    """Escolhe um usuário válido e retorna seu dicionário ou None."""
+    usuarios = repositorio.listar_usuarios()
+    if not usuarios:
         print("Nenhum usuário cadastrado.")
         return None
+    if len(usuarios) == 1:
+        usuario = usuarios[0]
+        print(f"\nUsuário selecionado automaticamente: ID {usuario['id']} - {usuario['nome']}")
+        return usuario
 
-    # Se houver apenas um cadastro, não é necessário pedir o ID
-    if len(lista_usuarios) == 1:
-        print("\nUsuário selecionado automaticamente:")
-        print(f"ID {lista_usuarios[0]['id']} - {lista_usuarios[0]['nome']}")
-        return 0
-
-    listar_usuarios(lista_usuarios, False)
-
-    id_usuario = validar_numero("\nDigite o ID do usuário: ")
-    indice = buscar_indice_por_id(lista_usuarios, id_usuario)
-
-    # Continua solicitando até que seja informado um ID existente
-    while indice is None:
+    listar_usuarios(repositorio, False)
+    while True:
+        id_usuario = validar_numero("\nDigite o ID do usuário: ")
+        usuario = repositorio.consultar_usuario(id_usuario)
+        if usuario is not None:
+            return usuario
         print("Erro: usuário inválido.")
-        id_usuario = validar_numero("Digite o ID do usuário: ")
-        indice = buscar_indice_por_id(lista_usuarios, id_usuario)
-
-    return indice
 
 
-def adicionar_pontos(usuario):
-    """Recebe um usuário e retorna seus dados com o saldo atualizado."""
+def adicionar_pontos(repositorio):
+    """Soma pontos usando UPDATE no Oracle."""
+    usuario = escolher_usuario(repositorio)
+    if usuario is None:
+        pausar()
+        return
     print("\n" + "=" * 40)
     print("           ADICIONAR PONTOS")
     print("=" * 40)
-
     pontos = 0
-
     while pontos <= 0:
         pontos = validar_numero("\nDigite a quantidade de pontos: ")
-
         if pontos <= 0:
             print("Informe um valor maior que zero.")
-
-    # Calcula o novo saldo sem alterar os outros dados do usuário
-    novo_saldo = usuario["pontos"] + pontos
-
-    usuario_atualizado = {
-        "id": usuario["id"],
-        "nome": usuario["nome"],
-        "pontos": novo_saldo,
-        "historico": usuario["historico"][:]
-    }
-
-    print("\nPontos adicionados com sucesso!")
-    print(f"Novo saldo: {novo_saldo} pontos")
-    print(
-        f"Saldo em reais: "
-        f"{formatar_reais(novo_saldo * VALOR_POR_PONTO)}"
-    )
-
+    saldo = repositorio.adicionar_pontos(usuario["id"], pontos)
+    if saldo is None:
+        print("Usuário não encontrado.")
+    else:
+        print("\nPontos adicionados com sucesso!")
+        print(f"Novo saldo: {saldo} pontos")
+        print(f"Saldo em reais: {formatar_reais(saldo * VALOR_POR_PONTO)}")
     pausar()
-    return usuario_atualizado
 
 
 def mostrar_passagens():
-    """Exibe as opções de passagens disponíveis no sistema."""
+    """Exibe a tabela fixa de passagens (não depende do banco)."""
     print("\n" + "=" * 40)
     print("           PASSAGENS DISPONÍVEIS")
     print("=" * 40)
-
-    # Percorre a tupla de opções para montar o menu de passagens
-    for i in range(len(TIPOS_PASSAGEM)):
-        passagem = TIPOS_PASSAGEM[i]
-
+    for indice, (nome, viagens, custo) in enumerate(TIPOS_PASSAGEM, start=1):
         print(
-            f"[{i + 1}] {passagem[0]} | "
-            f"{passagem[1]} viagem(ns) | "
-            f"{passagem[2]} pontos | "
-            f"{formatar_reais(passagem[1] * VALOR_PASSAGEM)}"
+            f"[{indice}] {nome} | {viagens} viagem(ns) | {custo} pontos | "
+            f"{formatar_reais(viagens * VALOR_PASSAGEM)}"
         )
 
 
-def trocar_pontos_por_passagem(usuario):
-    """Recebe um usuário e retorna seus dados após a tentativa de troca."""
+def trocar_pontos_por_passagem(repositorio):
+    """Realiza troca e salva saldo e histórico numa transação Oracle."""
+    usuario = escolher_usuario(repositorio)
+    if usuario is None:
+        pausar()
+        return
     print("\n" + "=" * 40)
     print("           TROCA DE PONTOS")
     print("=" * 40)
-
     mostrar_passagens()
-
     opcao = 0
-
-    while opcao < 1 or opcao > len(TIPOS_PASSAGEM):
+    while not 1 <= opcao <= len(TIPOS_PASSAGEM):
         opcao = validar_numero("\nEscolha a passagem desejada: ")
-
-        if opcao < 1 or opcao > len(TIPOS_PASSAGEM):
+        if not 1 <= opcao <= len(TIPOS_PASSAGEM):
             print("Erro: opção inválida.")
 
-    # Como a lista visual começa em 1, subtrai 1 para acessar o índice da tupla
-    passagem = TIPOS_PASSAGEM[opcao - 1]
-
-    nome_passagem = passagem[0]
-    quantidade_viagens = passagem[1]
-    custo = passagem[2]
-    valor_reais = quantidade_viagens * VALOR_PASSAGEM
-
-    novo_saldo = usuario["pontos"]
-
-    # Cria uma cópia do histórico antes de registrar uma nova troca
-    novo_historico = usuario["historico"][:]
-
-    # A troca só é realizada quando o usuário possui pontos suficientes
-    if usuario["pontos"] >= custo:
-        novo_saldo -= custo
-
-        # Registra os dados da operação em um novo dicionário
-        nova_troca = {
-            "passagem": nome_passagem,
-            "custo": custo,
-            "viagens": quantidade_viagens,
-            "valor": valor_reais
-        }
-
-        # Adiciona a troca ao histórico que será retornado com o usuário
-        novo_historico.append(nova_troca)
-
+    sucesso, saldo = repositorio.resgatar_passagem(usuario["id"], opcao - 1)
+    if sucesso:
         print("\nTroca realizada com sucesso!")
-        print(f"Passagem adquirida: {nome_passagem}")
-        print(f"Saldo atual: {novo_saldo} pontos")
-
+        print(f"Passagem adquirida: {TIPOS_PASSAGEM[opcao - 1][0]}")
+        print(f"Saldo atual: {saldo} pontos")
+    elif saldo is None:
+        print("Usuário não encontrado.")
     else:
         print("\nSaldo insuficiente.")
-        print(f"Saldo atual: {usuario['pontos']} pontos")
-        print(f"Faltam: {custo - usuario['pontos']} pontos")
-
+        print(f"Saldo atual: {saldo} pontos")
+        print(f"Faltam: {max(0, TIPOS_PASSAGEM[opcao - 1][2] - saldo)} pontos")
     pausar()
 
-    return {
-        "id": usuario["id"],
-        "nome": usuario["nome"],
-        "pontos": novo_saldo,
-        "historico": novo_historico
-    }
 
-
-def historico_trocas(usuario):
-    """Recebe um usuário e exibe seu histórico de trocas."""
+def historico_trocas(repositorio):
+    """Consulta as trocas armazenadas no Oracle para o usuário escolhido."""
+    usuario = escolher_usuario(repositorio)
+    if usuario is None:
+        pausar()
+        return
     print("\n" + "=" * 40)
     print("           HISTÓRICO DE TROCAS")
     print("=" * 40)
-
-    if len(usuario["historico"]) == 0:
+    if not usuario["historico"]:
         print("\nNenhuma troca realizada.")
-
     else:
         print(f"\nHistórico de {usuario['nome']}:")
-
-        # Percorre todas as trocas armazenadas no histórico do usuário
         for troca in usuario["historico"]:
             print(
-                f"[✓] {troca['passagem']} | "
-                f"{troca['viagens']} viagem(ns) | "
-                f"{troca['custo']} pontos | "
-                f"{formatar_reais(troca['valor'])}"
+                f"[✓] {troca['passagem']} | {troca['viagens']} viagem(ns) | "
+                f"{troca['custo']} pontos | {formatar_reais(troca['valor'])}"
             )
-
     pausar()
 
 
-def resumo_sistema(lista_usuarios):
-    """Recebe a lista de usuários e exibe as informações gerais do sistema."""
+def resumo_sistema(repositorio):
+    """Calcula totais dos dados atualmente presentes no Oracle."""
+    usuarios = repositorio.listar_usuarios()
+    total_pontos = sum(usuario["pontos"] for usuario in usuarios)
+    historicos = [troca for usuario in usuarios for troca in usuario["historico"]]
+    total_viagens = sum(troca["viagens"] for troca in historicos)
+    valor_resgatado = sum(troca["valor"] for troca in historicos)
     print("\n" + "=" * 40)
     print("           RESUMO DO SISTEMA")
     print("=" * 40)
-
-    # Variáveis acumuladoras usadas para calcular os totais do sistema
-    total_pontos = 0
-    total_operacoes = 0
-    total_viagens = 0
-    valor_resgatado = 0
-
-    # Percorre todos os usuários e soma seus dados
-    for usuario in lista_usuarios:
-        total_pontos += usuario["pontos"]
-        total_operacoes += len(usuario["historico"])
-
-        # Percorre também o histórico de cada usuário para somar as viagens
-        for troca in usuario["historico"]:
-            total_viagens += troca["viagens"]
-            valor_resgatado += troca["valor"]
-
-    print(f"Total de usuários: {len(lista_usuarios)}")
+    print(f"Total de usuários: {len(usuarios)}")
     print(f"Total de pontos: {total_pontos}")
-    print(
-        f"Valor total em saldo: "
-        f"{formatar_reais(total_pontos * VALOR_POR_PONTO)}"
-    )
-    print(f"Total de trocas: {total_operacoes}")
+    print(f"Valor total em saldo: {formatar_reais(total_pontos * VALOR_POR_PONTO)}")
+    print(f"Total de trocas: {len(historicos)}")
     print(f"Total de viagens resgatadas: {total_viagens}")
     print(f"Valor total resgatado: {formatar_reais(valor_resgatado)}")
-
     pausar()
