@@ -11,3 +11,6 @@ __pycache__/
 venv/
 .pytest_cache/
 .idea/
+
+# Arquivos exportados de usuários e históricos
+/exportacoes/

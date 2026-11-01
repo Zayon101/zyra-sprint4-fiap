@@ -1,7 +1,7 @@
-"""Ponto de entrada do Zyra - Sprint 4 (Etapa 4: regras de pontos e histórico)."""
+"""Ponto de entrada do Zyra - Sprint 4 (Etapa 5: exportação JSON)."""
 
 from banco import conectar
-from menus import exibir_boas_vindas, exibir_menu, menu_crud, menu_operacoes
+from menus import exibir_boas_vindas, exibir_menu, menu_crud, menu_operacoes, menu_exportacao
 from operacoes import historico_trocas, resumo_sistema
 from repositorio import ErroBanco, RepositorioOracle
 
@@ -40,6 +40,8 @@ def main():
                         historico_trocas(repositorio)
                     case 4:
                         resumo_sistema(repositorio)
+                    case 5:
+                        menu_exportacao(repositorio)
                     case 0:
                         print("\nPrograma finalizado. Obrigado por utilizar a Zyra!")
                     case _:

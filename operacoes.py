@@ -1,9 +1,8 @@
 """Pontos, passagens, histórico e estatísticas usando o banco Oracle."""
 
-from decimal import Decimal
-
 from constantes import TIPOS_PASSAGEM, VALOR_PASSAGEM, VALOR_POR_PONTO
 from usuarios import listar_usuarios
+from relatorios import calcular_resumo
 from utils import formatar_data_troca, formatar_reais, pausar, validar_numero
 
 
@@ -116,21 +115,15 @@ def historico_trocas(repositorio):
 
 
 def resumo_sistema(repositorio):
-    """Calcula totais dos dados atualmente presentes no Oracle."""
-    usuarios = repositorio.listar_usuarios()
-    total_pontos = sum(usuario["pontos"] for usuario in usuarios)
-    historicos = [troca for usuario in usuarios for troca in usuario["historico"]]
-    total_viagens = sum(troca["viagens"] for troca in historicos)
-    valor_resgatado = sum(
-        (Decimal(str(troca["valor"])) for troca in historicos), Decimal("0")
-    )
+    """Exibe indicadores de usuários e trocas consultados no Oracle."""
+    resumo = calcular_resumo(repositorio.listar_usuarios())
     print("\n" + "=" * 40)
     print("           RESUMO DO SISTEMA")
     print("=" * 40)
-    print(f"Total de usuários: {len(usuarios)}")
-    print(f"Total de pontos: {total_pontos}")
-    print(f"Valor total em saldo: {formatar_reais(total_pontos * VALOR_POR_PONTO)}")
-    print(f"Total de trocas: {len(historicos)}")
-    print(f"Total de viagens resgatadas: {total_viagens}")
-    print(f"Valor total resgatado: {formatar_reais(valor_resgatado)}")
+    print(f"Total de usuários: {resumo['total_usuarios']}")
+    print(f"Total de pontos: {resumo['total_pontos']}")
+    print(f"Valor total em saldo: {formatar_reais(resumo['valor_total_saldo_reais'])}")
+    print(f"Total de trocas: {resumo['total_trocas']}")
+    print(f"Total de viagens resgatadas: {resumo['total_viagens']}")
+    print(f"Valor total resgatado: {formatar_reais(resumo['valor_total_resgatado_reais'])}")
     pausar()

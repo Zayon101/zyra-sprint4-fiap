@@ -1,6 +1,6 @@
-# Zyra — Sprint 4 | Etapa 4: pontos, passagens e histórico
+# Zyra — Sprint 4 | Etapa 5: exportação JSON das consultas Oracle
 
-Continuação da Etapa 3, que já teve o CRUD confirmado no **Oracle Database da FIAP**. Agora foram revisadas e reforçadas as regras de negócio de pontos, resgates de passagens e histórico, preservando os menus da Sprint 3 e a persistência Oracle.
+Esta versão **continua a Etapa 4**, validada no Oracle Database da FIAP. Mantém CRUD, pontos, resgates e histórico e adiciona exportação de consultas SQL para arquivos JSON, sem substituir a persistência no banco.
 
 ## Integrantes
 
@@ -10,98 +10,93 @@ Continuação da Etapa 3, que já teve o CRUD confirmado no **Oracle Database da
 - João Gabriel Dantas Moura — RM 573101 — 1TDSPH
 - Záyon Alves Marques — RM 571205 — 1TDSPH
 
-## Atualizações da Etapa 4
+## Funcionalidades adicionadas
 
-- Adicionado `regras.py`, contendo validação independente do banco/terminal para nomes, pontos, créditos e tipos de passagem.
-- Reforçados os limites de dados para corresponder às colunas `NOME VARCHAR2(120 CHAR)` e `PONTOS NUMBER(12)` existentes no Oracle.
-- Créditos de pontos utilizam um `UPDATE` **atômico** que impede ultrapassar a capacidade da coluna, inclusive com alterações concorrentes.
-- Resgates já operavam com **UPDATE condicionado ao saldo + INSERT do histórico na mesma transação**; o comportamento foi preservado e ampliado com novos testes.
-- Consultas ao histórico retornam **ID e data da troca**, usando a coluna `DATA_TROCA` que já existia na Etapa 2. O terminal apresenta essas informações.
-- Resumo de valores resgatados utiliza `Decimal` na soma para evitar acumular imprecisões típicas de `float`.
-- A aplicação agora apresenta mensagens amigáveis para erros de validação de negócio, sem encerrar o programa.
-- Adicionado teste de integração real específico para pontos e resgates (`validar_operacoes_oracle.py`) e testes automatizados de regressão.
+Na tela principal, foi incluída a opção **[5] Exportar consultas em JSON**, com um submenu:
 
-### Regras atuais
+| Opção | Consulta realizada | Conteúdo do JSON |
+| --- | --- | --- |
+| 1 — Todos os usuários | SELECT de usuários e histórico | Lista de cadastros com saldos e resgates |
+| 2 — Usuário por ID | SELECT parametrizado por ID | Cadastro e histórico de um usuário |
+| 3 — Histórico por usuário | SELECT parametrizado por ID | Resgates, com ID, data, pontos e valor |
+| 4 — Resumo geral | SELECT de usuários e trocas | Totais de usuários, pontos, trocas, viagens e valores |
+| 0 — Voltar | — | Retorna ao menu anterior |
 
-| Ação | Regra |
-| --- | --- |
-| Novo cadastro | recebe 500 pontos |
-| Créditos | aceita inteiro positivo e soma no Oracle |
-| Ajuste manual de saldo | aceita inteiro de 0 a 999.999.999.999 |
-| Passagem unitária | 1 viagem, 587 pontos, R$ 5,40 |
-| Ida e volta | 2 viagens, 1.174 pontos, R$ 10,80 |
-| Pacote de 5 | 5 viagens, 2.935 pontos, R$ 27,00 |
-| Saldo insuficiente | bloqueia o resgate, sem gerar histórico |
-| Falha ao registrar troca | rollback do desconto de pontos |
-| Histórico | cada resgate registra tipo, viagens, custo, valor, ID e data |
+As consultas reutilizam as funções existentes em `RepositorioOracle` (`repositorio.py`) e **não executam INSERT, UPDATE, DELETE nem COMMIT**.
 
-> Os valores de passagem continuam sendo **regras fixas da simulação acadêmica**; não representam necessariamente a tarifa oficial vigente.
+A tela de resumo e o arquivo JSON agora compartilham a função `calcular_resumo()` do módulo `relatorios.py` para evitar divergências de cálculo.
 
-## Instalação e teste no Windows
+## Como instalar e executar no Windows
 
-**1.** Extraia o ZIP da Etapa 4 em uma pasta própria. Não apague a pasta da Etapa 3.
-
-**2.** Copie somente seu arquivo `.env` local preenchido da Etapa 3 para a pasta da Etapa 4. Não envie esse arquivo para o GitHub.
-
-**3.** No terminal, dentro da pasta nova, execute:
+1. Extraia o ZIP em uma pasta nova, mantendo uma cópia da Etapa 4.
+2. Copie **somente** o arquivo `.env` da sua Etapa 4 para a pasta desta etapa. Não altere suas tabelas Oracle.
+3. Dentro da pasta do projeto, execute:
 
 ```powershell
 py -m pip install -r requirements.txt
 py testar_banco.py
-```
-
-Os dois objetos `ZYRA_USUARIOS` e `ZYRA_TROCAS` devem aparecer com `[OK]`.
-
-**4.** Execute os testes automatizados (simulações locais de Oracle e regressões):
-
-```powershell
 py -m unittest discover -s tests -v
-```
-
-**5.** Faça o teste guiado no Oracle real da FIAP:
-
-```powershell
-py validar_operacoes_oracle.py
-```
-
-Digite `TESTAR` apenas quando quiser autorizar um **cadastro temporário próprio**. O teste atribui 500 pontos, credita mais 100, resgata uma passagem de 587 pontos (saldo 13), confere ID/data/histórico, rejeita um segundo resgate por falta de saldo e verifica a persistência em uma segunda conexão. Ao final, tenta excluir **somente** o cadastro temporário. Se houver erro de limpeza, o script mostra o ID para conferência.
-
-**6.** Execute o sistema:
-
-```powershell
 py main.py
 ```
 
-Você pode cadastrar um usuário de teste no menu 1, adicionar 100 pontos no menu 2, trocar por uma passagem unitária e consultar o histórico no menu 3. Esse usuário de teste manual **não é excluído automaticamente**.
+O banco deve exibir `[OK]` para `ZYRA_USUARIOS` e `ZYRA_TROCAS`. No menu principal, pressione **5** para abrir as exportações. Ao terminar, o programa informa o caminho completo do arquivo criado.
 
-### Não é necessário recriar as tabelas
+### Onde ficam os arquivos?
 
-Esta etapa utiliza a estrutura já criada no Oracle da FIAP. **Não rode `preparar_banco.py` nem `criar_tabelas.sql` novamente.** As colunas de data e os relacionamentos já estavam previstos desde a Etapa 2. O sistema não usa o JSON como fonte principal de dados.
+São gravados na pasta **`exportacoes/`**, criada automaticamente ao lado de `main.py`.
 
-## Principais arquivos modificados/adicionados
+Exemplos de nomes gerados:
 
-| Arquivo | Responsabilidade |
+- `zyra_usuarios_20261101_103000_123456.json`
+- `zyra_usuario_4_20261101_103001_123456.json`
+- `zyra_historico_4_20261101_103002_123456.json`
+- `zyra_resumo_20261101_103003_123456.json`
+
+O timestamp torna os nomes únicos na prática, e o modo de criação exclusiva (`x`) impede sobrescrever um arquivo já existente mesmo em caso de colisão. O arquivo usa UTF-8, indentação de 4 espaços e acentos preservados. Datas de trocas são exportadas em texto ISO 8601, como `2026-11-01T10:30:00`.
+
+Quando não existe nenhum usuário, a exportação geral gera uma lista vazia válida. Para consultas por ID inexistente, **nenhum arquivo é criado**.
+
+> **Privacidade:** os arquivos JSON podem incluir nomes, IDs e históricos dos cadastros. A pasta `exportacoes/` está no `.gitignore`. Evite compartilhar exportações com dados reais sem revisar o conteúdo.
+
+## Como validar com o Oracle real da FIAP
+
+Depois de executar o `testar_banco.py`, rode:
+
+```powershell
+py validar_exportacao_oracle.py
+```
+
+Esse teste automatizado **não modifica o banco de dados**. Faz consultas reais, exporta para uma pasta temporária, confere os JSONs e **remove os arquivos temporários** ao final. Verifica:
+
+1. Todos os usuários e sua quantidade.
+2. O resumo geral e os totais.
+3. Um cadastro por ID e o histórico desse cadastro, **se houver ao menos um usuário**.
+
+Se não houver usuários no banco, o teste informa que os dois casos por ID não puderam ser exercitados. Nesse caso, cadastre um usuário de teste no `main.py` e execute novamente, se desejar validar todos os cenários. O script de validação não cria nem exclui usuários.
+
+O programa principal, por outro lado, **mantém** os JSONs exportados na pasta `exportacoes/`, para serem utilizados na entrega acadêmica.
+
+## Principais arquivos adicionados ou modificados
+
+| Arquivo | Papel |
 | --- | --- |
-| `regras.py` | Regras e validações independentes |
-| `repositorio.py` | SQL parametrizado, transações, limites e leitura de histórico com data |
-| `operacoes.py` | Exibição do histórico e resumo monetário |
-| `utils.py` | Validação de nome e formatação de data |
-| `constantes.py` | Limites compatíveis com o esquema Oracle |
-| `main.py` | Tratamento amigável de valores fora das regras |
-| `validar_operacoes_oracle.py` | Teste guiado no Oracle da FIAP |
-| `tests/test_etapa4.py` | Testes de pontos, passagens, histórico, erros e rollback |
+| `exportacao.py` | Montagem dos dados, serialização JSON e escrita segura |
+| `relatorios.py` | Cálculo único dos indicadores da tela e do JSON |
+| `menus.py` | Novo submenu de exportação |
+| `main.py` | Nova opção `[5]` do menu principal |
+| `operacoes.py` | Reutilização dos cálculos de `relatorios.py` |
+| `validar_exportacao_oracle.py` | Validação com consultas Oracle reais e arquivos temporários |
+| `tests/test_etapa5.py` | Testes automatizados dos quatro tipos de exportação |
+| `.gitignore` | Exclusão dos JSONs exportados do controle de versão |
 
-Arquivos não alterados (como o SQL de criação, `banco.py` e o CRUD) foram mantidos para não provocar regressões.
+Os demais módulos da Etapa 4 foram preservados, incluindo SQL, conexão Oracle, operações de resgate e validações.
 
-## Limitações e cuidados
+## Limitações e próximos passos
 
-- Os testes locais usam SQLite para simular consultas e transações, **não um Oracle real**. O teste de integração real precisa ser executado no computador com acesso ao banco da FIAP.
-- A opção de alteração manual de saldo substitui o valor atual; o programa não tem auditoria separada de créditos/ajustes, apenas **histórico de resgates**. Caso o projeto exija extrato de movimentações, será necessário criar uma tabela específica numa evolução futura.
-- Excluir um usuário exclui também suas trocas pelo `ON DELETE CASCADE` definido no Oracle. Não teste exclusões sobre cadastros reais.
-- A coluna `PONTOS NUMBER(12)` limita saldos a 12 dígitos e foi adotada a validação de aplicação correspondente.
-- Os dados da Sprint 3 em JSON continuam disponíveis apenas para importação opcional (`importar_json.py`). A exportação de consultas SQL para JSON será desenvolvida na **Etapa 5**.
-- Consulte o enunciado da FIAP para registrar no documento e no vídeo os prompts utilizados, as revisões feitas e como o grupo entendeu e testou a solução.
+- Os testes automatizados de unidade e integração simulada usam SQLite; o teste `validar_exportacao_oracle.py` verifica a exportação em **Oracle real** somente no seu ambiente da FIAP.
+- Os valores de passagem seguem as regras didáticas do Zyra e não equivalem necessariamente às tarifas oficiais atuais.
+- Exportação JSON é **cópia dos resultados consultados**, não um mecanismo de sincronização bidirecional com o Oracle. As alterações de usuários e pontos continuam ocorrendo exclusivamente no banco.
+- Não é necessário executar novamente `preparar_banco.py` ou `criar_tabelas.sql`.
+- Para a entrega da Sprint 4, registrem os prompts de IA usados e uma análise crítica das sugestões, das modificações e das verificações feitas pela equipe, como pede o enunciado.
 
-## Próximo passo
-
-**Etapa 5:** implementar opção de consulta e exportação de usuários/histórico para arquivo JSON, a partir do Oracle, sem substituir a persistência do banco.
+**Próxima etapa:** integração com uma API externa pública relevante para o Zyra (consulta de estações de metrô).

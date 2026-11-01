@@ -1,6 +1,7 @@
 """Menus do Zyra, delegando operações às funções de cada módulo."""
 
 from constantes import PONTOS_POR_PASSAGEM, VALOR_PASSAGEM
+from exportacao import exportar_consulta
 from operacoes import adicionar_pontos, mostrar_passagens, trocar_pontos_por_passagem
 from usuarios import alterar_usuario, cadastrar_usuario, consultar_usuario, excluir_usuario, listar_usuarios
 from utils import formatar_reais, pausar, validar_numero
@@ -65,6 +66,50 @@ def menu_operacoes(repositorio):
                 print("\nOpção inválida.")
 
 
+def menu_exportacao(repositorio):
+    """Permite exportar consultas SQL sem modificar os dados do Oracle."""
+    opcao = -1
+    tipos = {1: "usuarios", 2: "usuario", 3: "historico", 4: "resumo"}
+    while opcao != 0:
+        print("\n" + "=" * 40)
+        print("           EXPORTAR CONSULTAS JSON")
+        print("=" * 40)
+        print("[1] Todos os usuários")
+        print("[2] Usuário por ID")
+        print("[3] Histórico de trocas por usuário")
+        print("[4] Resumo geral do sistema")
+        print("-" * 40)
+        print("[0] Voltar")
+        opcao = validar_numero("Escolha uma opção: ")
+        if opcao == 0:
+            print("\nVoltando ao menu principal...")
+            continue
+        if opcao not in tipos:
+            print("\nOpção inválida.")
+            continue
+
+        id_usuario = None
+        if opcao in (2, 3):
+            id_usuario = validar_numero("Digite o ID do usuário: ")
+            if id_usuario <= 0:
+                print("\nErro: informe um ID maior que zero.")
+                pausar()
+                continue
+
+        try:
+            caminho = exportar_consulta(repositorio, tipos[opcao], id_usuario)
+        except (OSError, TypeError, ValueError) as erro:
+            print(f"\nErro ao criar arquivo JSON: {erro}")
+        else:
+            if caminho is None:
+                print("\nUsuário não encontrado. Nenhum arquivo foi criado.")
+            else:
+                print("\nConsulta exportada com sucesso!")
+                print(f"Arquivo: {caminho}")
+                print("Aviso: o JSON pode conter dados de usuários; compartilhe com cuidado.")
+        pausar()
+
+
 def exibir_boas_vindas():
     """Exibe a tela de boas-vindas sem operações de persistência."""
     print("\n" + "=" * 40)
@@ -86,6 +131,7 @@ def exibir_menu():
     print("[2] Pontos e passagens")
     print("[3] Histórico de trocas")
     print("[4] Resumo do sistema")
+    print("[5] Exportar consultas em JSON")
     print("-" * 40)
     print("[0] Encerrar")
     print("=" * 40)
