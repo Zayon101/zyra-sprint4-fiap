@@ -1,4 +1,4 @@
-"""Ponto de entrada do Zyra - Sprint 4 (Etapa 3: Oracle como fonte de dados)."""
+"""Ponto de entrada do Zyra - Sprint 4 (Etapa 4: regras de pontos e histórico)."""
 
 from banco import conectar
 from menus import exibir_boas_vindas, exibir_menu, menu_crud, menu_operacoes
@@ -44,6 +44,8 @@ def main():
                         print("\nPrograma finalizado. Obrigado por utilizar a Zyra!")
                     case _:
                         print("\nOpção inválida.")
+            except ValueError as erro:
+                print(f"\nOperação inválida: {erro}")
             except ErroBanco as erro:
                 print(f"\nErro de banco: {erro}")
                 if erro.__cause__ is not None:

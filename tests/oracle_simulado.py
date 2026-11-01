@@ -72,7 +72,8 @@ class ConexaoSimulada:
                 PASSAGEM TEXT NOT NULL,
                 VIAGENS INTEGER NOT NULL,
                 CUSTO_PONTOS INTEGER NOT NULL,
-                VALOR_REAIS NUMERIC NOT NULL
+                VALOR_REAIS NUMERIC NOT NULL,
+                DATA_TROCA TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
         """)
         self.falha_na_troca = False

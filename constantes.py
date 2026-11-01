@@ -6,6 +6,10 @@ from pathlib import Path
 PASTA_PROGRAMA = Path(__file__).resolve().parent
 ARQUIVO_DADOS = PASTA_PROGRAMA / "dados_zyra.json"
 
+# Limites compatíveis com ZYRA_USUARIOS no Oracle (NUMBER(12) / VARCHAR2(120 CHAR)).
+MAX_PONTOS = 999_999_999_999
+MAX_CARACTERES_NOME = 120
+
 BONUS_CADASTRO = 500
 VALOR_PASSAGEM = 5.40
 PONTOS_POR_PASSAGEM = 587

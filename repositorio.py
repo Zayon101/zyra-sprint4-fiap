@@ -4,9 +4,14 @@ Todas as consultas usam parâmetros vinculados. Alterações são confirmadas
 com commit; em caso de erro, a transação é revertida com rollback.
 """
 
+from datetime import datetime
 from decimal import Decimal
 
-from constantes import BONUS_CADASTRO, TIPOS_PASSAGEM, VALOR_PASSAGEM
+from constantes import BONUS_CADASTRO, MAX_PONTOS, VALOR_PASSAGEM
+from regras import (
+    validar_credito, validar_indice_passagem, validar_nome_usuario,
+    validar_saldo,
+)
 
 
 class ErroBanco(RuntimeError):
@@ -34,13 +39,16 @@ class RepositorioOracle:
                     for id_usuario, nome, pontos in cursor.fetchall()
                 }
                 cursor.execute(
-                    """SELECT USUARIO_ID, PASSAGEM, VIAGENS, CUSTO_PONTOS, VALOR_REAIS
+                    """SELECT ID, USUARIO_ID, PASSAGEM, VIAGENS,
+                              CUSTO_PONTOS, VALOR_REAIS, DATA_TROCA
                        FROM ZYRA_TROCAS ORDER BY ID"""
                 )
-                for usuario_id, passagem, viagens, custo, valor in cursor.fetchall():
+                for id_troca, usuario_id, passagem, viagens, custo, valor, data in cursor.fetchall():
                     usuario = usuarios.get(int(usuario_id))
                     if usuario is not None:
                         usuario["historico"].append({
+                            "id": int(id_troca),
+                            "data": self._data_iso(data),
                             "passagem": passagem,
                             "viagens": int(viagens),
                             "custo": int(custo),
@@ -69,12 +77,15 @@ class RepositorioOracle:
                     "historico": [],
                 }
                 cursor.execute(
-                    """SELECT PASSAGEM, VIAGENS, CUSTO_PONTOS, VALOR_REAIS
+                    """SELECT ID, PASSAGEM, VIAGENS, CUSTO_PONTOS,
+                              VALOR_REAIS, DATA_TROCA
                        FROM ZYRA_TROCAS WHERE USUARIO_ID = :id ORDER BY ID""",
                     {"id": id_usuario},
                 )
-                for passagem, viagens, custo, valor in cursor.fetchall():
+                for id_troca, passagem, viagens, custo, valor, data in cursor.fetchall():
                     usuario["historico"].append({
+                        "id": int(id_troca),
+                        "data": self._data_iso(data),
                         "passagem": passagem,
                         "viagens": int(viagens),
                         "custo": int(custo),
@@ -84,11 +95,18 @@ class RepositorioOracle:
         except Exception as erro:
             raise ErroBanco("Falha ao consultar usuário no Oracle.") from erro
 
+    @staticmethod
+    def _data_iso(data):
+        """Converte data do Oracle para texto ISO facilmente serializável."""
+        if isinstance(data, datetime):
+            return data.isoformat(timespec="seconds")
+        if isinstance(data, str):
+            return data.replace(" ", "T")
+        raise ValueError("Data de troca inválida retornada pelo banco.")
+
     def criar_usuario(self, nome):
         """Insere um cadastro com bônus inicial e devolve o ID gerado."""
-        nome = nome.strip()
-        if len(nome) < 3:
-            raise ValueError("O nome deve ter pelo menos três caracteres.")
+        nome = validar_nome_usuario(nome)
         try:
             with self.conexao.cursor() as cursor:
                 novo_id = cursor.var(int)
@@ -107,9 +125,7 @@ class RepositorioOracle:
 
     def alterar_nome(self, id_usuario, nome):
         """Altera o nome e retorna False se o usuário não existir."""
-        nome = nome.strip()
-        if len(nome) < 3:
-            raise ValueError("O nome deve ter pelo menos três caracteres.")
+        nome = validar_nome_usuario(nome)
         return self._alterar(
             "UPDATE ZYRA_USUARIOS SET NOME = :nome WHERE ID = :id",
             {"nome": nome, "id": id_usuario},
@@ -117,8 +133,7 @@ class RepositorioOracle:
 
     def alterar_pontos(self, id_usuario, pontos):
         """Define o saldo de pontos e retorna False para ID inexistente."""
-        if type(pontos) is not int or pontos < 0:
-            raise ValueError("O saldo deve ser um inteiro não negativo.")
+        validar_saldo(pontos)
         return self._alterar(
             "UPDATE ZYRA_USUARIOS SET PONTOS = :pontos WHERE ID = :id",
             {"pontos": pontos, "id": id_usuario},
@@ -144,19 +159,30 @@ class RepositorioOracle:
 
     def adicionar_pontos(self, id_usuario, quantidade):
         """Soma pontos diretamente no banco, sem sobrescrever um saldo antigo."""
-        if type(quantidade) is not int or quantidade <= 0:
-            raise ValueError("A quantidade deve ser um inteiro positivo.")
+        validar_credito(quantidade)
         try:
             with self.conexao.cursor() as cursor:
                 saldo = cursor.var(int)
                 cursor.execute(
                     """UPDATE ZYRA_USUARIOS SET PONTOS = PONTOS + :quantidade
-                       WHERE ID = :id RETURNING PONTOS INTO :novo_saldo""",
-                    {"quantidade": quantidade, "id": id_usuario, "novo_saldo": saldo},
+                       WHERE ID = :id AND PONTOS <= :limite
+                       RETURNING PONTOS INTO :novo_saldo""",
+                    {"quantidade": quantidade, "id": id_usuario,
+                     "limite": MAX_PONTOS - quantidade, "novo_saldo": saldo},
                 )
                 valores = saldo.getvalue()
+            if not valores:
+                self.conexao.rollback()
+                # Diferencia limite de pontos de cadastro inexistente.
+                usuario = self.consultar_usuario(id_usuario)
+                if usuario is not None:
+                    raise ValueError("O crédito ultrapassaria o limite de pontos do Oracle.")
+                return None
             self.conexao.commit()
-            return int(valores[0]) if valores else None
+            return int(valores[0])
+        except ValueError:
+            self.conexao.rollback()
+            raise
         except Exception as erro:
             self.conexao.rollback()
             raise ErroBanco("Falha ao adicionar pontos no Oracle.") from erro
@@ -167,9 +193,7 @@ class RepositorioOracle:
         Retorna (sucesso, saldo_atual). Nenhuma alteração ocorre se o saldo
         for insuficiente. O índice representa a posição em TIPOS_PASSAGEM.
         """
-        if not 0 <= indice_passagem < len(TIPOS_PASSAGEM):
-            raise ValueError("Tipo de passagem inválido.")
-        passagem, viagens, custo = TIPOS_PASSAGEM[indice_passagem]
+        passagem, viagens, custo = validar_indice_passagem(indice_passagem)
         try:
             with self.conexao.cursor() as cursor:
                 novo_saldo = cursor.var(int)

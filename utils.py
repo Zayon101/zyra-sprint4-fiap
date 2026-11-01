@@ -1,5 +1,7 @@
 """Validações, formatação e auxiliares reutilizados pelos demais módulos."""
 
+from constantes import MAX_CARACTERES_NOME
+
 
 def formatar_reais(valor):
     """Recebe um valor numérico e retorna o valor formatado em reais."""
@@ -13,10 +15,10 @@ def validar_nome(mensagem="Digite o nome do usuário: "):
         nome = input(mensagem).strip()
 
         # Remove os espaços apenas para verificar se o restante possui somente letras
-        if len(nome) >= 3 and nome.replace(" ", "").isalpha():
+        if 3 <= len(nome) <= MAX_CARACTERES_NOME and nome.replace(" ", "").isalpha():
             return nome
 
-        print("Erro: digite um nome válido com pelo menos 3 letras.")
+        print(f"Erro: informe de 3 a {MAX_CARACTERES_NOME} letras (espaços permitidos).")
 
 
 def validar_numero(mensagem):
@@ -24,7 +26,7 @@ def validar_numero(mensagem):
     numero_texto = input(mensagem).strip()
 
     # Valida o texto antes da conversão para evitar ValueError nos submenus
-    while numero_texto.isdigit() == False:
+    while not numero_texto.isdigit():
         print("Erro: digite apenas números.")
         numero_texto = input(mensagem).strip()
 
@@ -35,3 +37,17 @@ def pausar():
     """Pausa a execução até o usuário pressionar ENTER."""
     input("\nPressione ENTER para continuar...")
 
+
+
+def formatar_data_troca(data):
+    """Formata uma data retornada pelo Oracle (ou texto ISO nos testes)."""
+    from datetime import datetime
+
+    if isinstance(data, datetime):
+        return data.strftime("%d/%m/%Y %H:%M:%S")
+    if isinstance(data, str):
+        try:
+            return datetime.fromisoformat(data).strftime("%d/%m/%Y %H:%M:%S")
+        except ValueError:
+            pass
+    return "Data indisponível"

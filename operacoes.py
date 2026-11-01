@@ -1,8 +1,10 @@
 """Pontos, passagens, histórico e estatísticas usando o banco Oracle."""
 
+from decimal import Decimal
+
 from constantes import TIPOS_PASSAGEM, VALOR_PASSAGEM, VALOR_POR_PONTO
 from usuarios import listar_usuarios
-from utils import formatar_reais, pausar, validar_numero
+from utils import formatar_data_troca, formatar_reais, pausar, validar_numero
 
 
 def escolher_usuario(repositorio):
@@ -109,6 +111,7 @@ def historico_trocas(repositorio):
                 f"[✓] {troca['passagem']} | {troca['viagens']} viagem(ns) | "
                 f"{troca['custo']} pontos | {formatar_reais(troca['valor'])}"
             )
+            print(f"    Resgate #{troca['id']} em {formatar_data_troca(troca['data'])}")
     pausar()
 
 
@@ -118,7 +121,9 @@ def resumo_sistema(repositorio):
     total_pontos = sum(usuario["pontos"] for usuario in usuarios)
     historicos = [troca for usuario in usuarios for troca in usuario["historico"]]
     total_viagens = sum(troca["viagens"] for troca in historicos)
-    valor_resgatado = sum(troca["valor"] for troca in historicos)
+    valor_resgatado = sum(
+        (Decimal(str(troca["valor"])) for troca in historicos), Decimal("0")
+    )
     print("\n" + "=" * 40)
     print("           RESUMO DO SISTEMA")
     print("=" * 40)
