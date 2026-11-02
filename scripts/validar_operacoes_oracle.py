@@ -6,8 +6,8 @@ outra conexão e tenta excluir esse cadastro no final. Não altera os demais.
 
 from contextlib import closing
 
-from banco import conectar
-from repositorio import RepositorioOracle
+from zyra.database.banco import conectar
+from zyra.database.repositorio import RepositorioOracle
 
 
 def exigir(condicao, mensagem):

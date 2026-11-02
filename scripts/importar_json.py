@@ -7,9 +7,9 @@ os usuários e seus históricos, sem sobrescrever outros registros no banco.
 import json
 from decimal import Decimal, InvalidOperation
 
-from banco import conectar
-from constantes import ARQUIVO_DADOS
-from repositorio import ErroBanco, RepositorioOracle
+from zyra.database.banco import conectar
+from zyra.core.constantes import ARQUIVO_DADOS
+from zyra.database.repositorio import ErroBanco, RepositorioOracle
 
 
 def validar_arquivo_json(caminho):

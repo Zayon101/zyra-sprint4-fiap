@@ -4,8 +4,8 @@ Cria um único usuário de teste, confirma as operações e o remove ao final.
 Não execute sem conhecer o banco conectado e sem autorizar o teste.
 """
 
-from banco import conectar
-from repositorio import RepositorioOracle
+from zyra.database.banco import conectar
+from zyra.database.repositorio import RepositorioOracle
 
 
 def validar_crud(repositorio):

@@ -6,13 +6,13 @@ import io
 import unittest
 from unittest.mock import patch
 
-from constantes import MAX_CARACTERES_NOME, MAX_PONTOS, TIPOS_PASSAGEM
-from operacoes import historico_trocas, resumo_sistema
-from regras import (validar_credito, validar_indice_passagem,
+from zyra.core.constantes import MAX_CARACTERES_NOME, MAX_PONTOS, TIPOS_PASSAGEM
+from zyra.cli.operacoes import historico_trocas, resumo_sistema
+from zyra.core.regras import (validar_credito, validar_indice_passagem,
                     validar_nome_usuario, validar_saldo)
-from repositorio import ErroBanco, RepositorioOracle
+from zyra.database.repositorio import ErroBanco, RepositorioOracle
 from tests.oracle_simulado import ConexaoSimulada
-from utils import formatar_data_troca, validar_nome
+from zyra.cli.utils import formatar_data_troca, validar_nome
 
 
 class TestesEtapa4(unittest.TestCase):
@@ -118,10 +118,10 @@ class TestesEtapa4(unittest.TestCase):
         self.assertEqual(dados["historico"], [])
 
     def test_erro_de_negocio_eh_mostrado_sem_fechar_programa(self):
-        import main
+        from zyra.cli import app as main
         entradas = ["", "1", "1", "Ana Maria", "", "4", "1", "2", str(MAX_PONTOS + 1), "0", "0"]
         # Após o erro o menu principal reaparece; o submenu do CRUD foi encerrado pela exceção.
-        with (patch("main.conectar", return_value=self.conexao),
+        with (patch("zyra.cli.app.conectar", return_value=self.conexao),
               patch("builtins.input", side_effect=entradas),
               contextlib.redirect_stdout(io.StringIO()) as out):
             main.main()

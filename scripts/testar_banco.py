@@ -2,7 +2,7 @@
 
 from contextlib import closing
 
-from banco import conectar
+from zyra.database.banco import conectar
 
 
 TABELAS_ESPERADAS = {"ZYRA_USUARIOS", "ZYRA_TROCAS"}
@@ -34,7 +34,7 @@ def main():
         for tabela in sorted(TABELAS_ESPERADAS):
             print(f"[{'OK' if tabela in existentes else 'FALTA'}] {tabela}")
         if existentes != TABELAS_ESPERADAS:
-            print("\nPara criar as tabelas, execute: python preparar_banco.py")
+            print("\nPara criar as tabelas, execute: python -m scripts.preparar_banco")
         return 0
     except (OSError, ValueError, ImportError) as erro:
         print(f"\nNão foi possível testar a conexão: {erro}")

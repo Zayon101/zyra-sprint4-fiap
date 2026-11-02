@@ -3,7 +3,7 @@
 from pathlib import Path
 
 # Arquivo legado usado apenas para a importação opcional da Sprint 3.
-PASTA_PROGRAMA = Path(__file__).resolve().parent
+PASTA_PROGRAMA = Path(__file__).resolve().parents[2]
 ARQUIVO_DADOS = PASTA_PROGRAMA / "dados_zyra.json"
 
 # Limites compatíveis com ZYRA_USUARIOS no Oracle (NUMBER(12) / VARCHAR2(120 CHAR)).

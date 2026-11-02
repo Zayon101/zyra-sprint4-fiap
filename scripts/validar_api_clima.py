@@ -1,6 +1,6 @@
 """Teste de acesso HTTP real à Open-Meteo (somente leitura; não usa o Oracle)."""
 
-from api_clima import ErroAPI, consultar_clima
+from zyra.integrations.api_clima import ErroAPI, consultar_clima
 
 
 def main():

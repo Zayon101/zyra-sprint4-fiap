@@ -8,9 +8,9 @@ import json
 from http.client import HTTPConnection
 from threading import Thread
 
-from banco import conectar
-from repositorio import RepositorioOracle
-from servidor_web import criar_servidor
+from zyra.database.banco import conectar
+from zyra.database.repositorio import RepositorioOracle
+from zyra.web.servidor import criar_servidor
 
 
 def requisitar(porta, metodo, rota, dados=None):

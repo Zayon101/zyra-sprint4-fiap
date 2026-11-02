@@ -1,6 +1,6 @@
 """Validações, formatação e auxiliares reutilizados pelos demais módulos."""
 
-from constantes import MAX_CARACTERES_NOME
+from zyra.core.constantes import MAX_CARACTERES_NOME
 
 
 def formatar_reais(valor):

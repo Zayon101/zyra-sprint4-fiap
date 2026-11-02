@@ -8,10 +8,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from exportacao import exportar_consulta, montar_consulta
-from menus import menu_exportacao
-from relatorios import calcular_resumo
-from repositorio import ErroBanco, RepositorioOracle
+from zyra.exportacao import exportar_consulta, montar_consulta
+from zyra.cli.menus import menu_exportacao
+from zyra.core.relatorios import calcular_resumo
+from zyra.database.repositorio import ErroBanco, RepositorioOracle
 from tests.oracle_simulado import ConexaoSimulada
 
 
@@ -108,7 +108,7 @@ class TestesEtapa5(unittest.TestCase):
 
     def test_nao_sobrescreve_arquivo_existente(self):
         self.repo.criar_usuario("Ana Maria")
-        with patch("exportacao._nome_arquivo", return_value="fixo.json"):
+        with patch("zyra.exportacao._nome_arquivo", return_value="fixo.json"):
             primeiro = exportar_consulta(self.repo, "usuarios", pasta_destino=self.pasta)
             conteudo = primeiro.read_bytes()
             with self.assertRaises(FileExistsError):
@@ -118,7 +118,7 @@ class TestesEtapa5(unittest.TestCase):
 
     def test_falha_na_escrita_remove_arquivo_parcial(self):
         self.repo.criar_usuario("Ana Maria")
-        with patch("exportacao.json.dump", side_effect=TypeError("Falha de teste")):
+        with patch("zyra.exportacao.json.dump", side_effect=TypeError("Falha de teste")):
             with self.assertRaises(TypeError):
                 exportar_consulta(self.repo, "usuarios", pasta_destino=self.pasta)
         self.assertEqual(list(self.pasta.iterdir()), [])
@@ -139,8 +139,8 @@ class TestesEtapa5(unittest.TestCase):
     def test_menu_com_quatro_opcoes_e_retorno(self):
         usuario_id = self.repo.criar_usuario("Ana Maria")
         entradas = ["1", "", "2", str(usuario_id), "", "3", str(usuario_id), "", "4", "", "0"]
-        with (patch("menus.exportar_consulta", wraps=exportar_consulta) as exportador,
-              patch("exportacao.PASTA_EXPORTACOES", self.pasta),
+        with (patch("zyra.cli.menus.exportar_consulta", wraps=exportar_consulta) as exportador,
+              patch("zyra.exportacao.PASTA_EXPORTACOES", self.pasta),
               patch("builtins.input", side_effect=entradas),
               contextlib.redirect_stdout(io.StringIO()) as saida):
             menu_exportacao(self.repo)
@@ -156,7 +156,7 @@ class TestesEtapa5(unittest.TestCase):
         self.assertIn("Usuário não encontrado", saida.getvalue())
 
     def test_menu_trata_falha_gravacao_sem_fechar_submenu(self):
-        with (patch("menus.exportar_consulta", side_effect=OSError("disco indisponível")),
+        with (patch("zyra.cli.menus.exportar_consulta", side_effect=OSError("disco indisponível")),
               patch("builtins.input", side_effect=["1", "", "0"]),
               contextlib.redirect_stdout(io.StringIO()) as saida):
             menu_exportacao(self.repo)
@@ -164,10 +164,10 @@ class TestesEtapa5(unittest.TestCase):
         self.assertIn("Voltando ao menu principal", saida.getvalue())
 
     def test_integracao_main_menu_exportacao(self):
-        import main
+        from zyra.cli import app as main
         entradas = ["", "5", "1", "", "0", "0"]
-        with (patch("main.conectar", return_value=self.conexao),
-              patch("exportacao.PASTA_EXPORTACOES", self.pasta),
+        with (patch("zyra.cli.app.conectar", return_value=self.conexao),
+              patch("zyra.exportacao.PASTA_EXPORTACOES", self.pasta),
               patch("builtins.input", side_effect=entradas),
               contextlib.redirect_stdout(io.StringIO()) as saida):
             main.main()
@@ -182,9 +182,9 @@ class TestesValidadorOracleEtapa5(unittest.TestCase):
     """Testa o roteiro de validação real usando uma conexão simulada."""
 
     def test_validador_sem_cadastros(self):
-        from validar_exportacao_oracle import main as validar
+        from scripts.validar_exportacao_oracle import main as validar
         conexao = ConexaoSimulada()
-        with (patch("validar_exportacao_oracle.conectar", return_value=conexao),
+        with (patch("scripts.validar_exportacao_oracle.conectar", return_value=conexao),
               contextlib.redirect_stdout(io.StringIO()) as saida):
             resultado = validar()
         self.assertEqual(resultado, 0)
@@ -192,14 +192,14 @@ class TestesValidadorOracleEtapa5(unittest.TestCase):
         self.assertTrue(conexao.fechada)
 
     def test_validador_com_cadastros_e_historico(self):
-        from validar_exportacao_oracle import main as validar
+        from scripts.validar_exportacao_oracle import main as validar
         conexao = ConexaoSimulada()
         repositorio = RepositorioOracle(conexao)
         usuario_id = repositorio.criar_usuario("Ana Maria")
         repositorio.adicionar_pontos(usuario_id, 100)
         repositorio.resgatar_passagem(usuario_id, 0)
         commits_antes = conexao.commits
-        with (patch("validar_exportacao_oracle.conectar", return_value=conexao),
+        with (patch("scripts.validar_exportacao_oracle.conectar", return_value=conexao),
               contextlib.redirect_stdout(io.StringIO()) as saida):
             resultado = validar()
         self.assertEqual(resultado, 0)

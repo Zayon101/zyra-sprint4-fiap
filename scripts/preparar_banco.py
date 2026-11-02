@@ -4,10 +4,10 @@ import re
 from contextlib import closing
 from pathlib import Path
 
-from banco import conectar
+from zyra.database.banco import conectar
 
 
-ARQUIVO_SQL = Path(__file__).resolve().with_name("criar_tabelas.sql")
+ARQUIVO_SQL = Path(__file__).resolve().parents[1] / "sql" / "criar_tabelas.sql"
 
 # Este script executa apenas estas instruções DDL conhecidas.
 TIPOS_PERMITIDOS = {"TABLE": "TABLE", "INDEX": "INDEX"}

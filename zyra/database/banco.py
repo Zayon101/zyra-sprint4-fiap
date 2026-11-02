@@ -7,7 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-PASTA_PROJETO = Path(__file__).resolve().parent
+PASTA_PROJETO = Path(__file__).resolve().parents[2]
 ARQUIVO_AMBIENTE = PASTA_PROJETO / ".env"
 
 

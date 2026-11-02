@@ -8,10 +8,10 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from relatorios import calcular_resumo
+from zyra.core.relatorios import calcular_resumo
 
 
-PASTA_EXPORTACOES = Path(__file__).resolve().parent / "exportacoes"
+PASTA_EXPORTACOES = Path(__file__).resolve().parents[1] / "exportacoes"
 TIPOS_EXPORTACAO = ("usuarios", "usuario", "historico", "resumo")
 
 

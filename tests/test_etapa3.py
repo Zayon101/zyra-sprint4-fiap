@@ -8,8 +8,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from importar_json import importar_no_oracle, validar_arquivo_json
-from repositorio import ErroBanco, RepositorioOracle
+from scripts.importar_json import importar_no_oracle, validar_arquivo_json
+from zyra.database.repositorio import ErroBanco, RepositorioOracle
 from tests.oracle_simulado import ConexaoSimulada
 
 
@@ -115,7 +115,7 @@ class TestesEtapa3(unittest.TestCase):
         self.assertEqual(self.repo.listar_usuarios(), [])
 
     def test_menu_crud_interativo(self):
-        from menus import menu_crud
+        from zyra.cli.menus import menu_crud
         entradas = ["1", "Ana Maria", "", "2", "", "3", "1", "",
                     "4", "1", "1", "Ana Clara", "", "5", "1", "1", "", "0"]
         with patch("builtins.input", side_effect=entradas), contextlib.redirect_stdout(io.StringIO()) as saida:
@@ -125,7 +125,7 @@ class TestesEtapa3(unittest.TestCase):
         self.assertIn("Usuário excluído com sucesso", saida.getvalue())
 
     def test_interface_completa_com_pontos_resgate_e_historico(self):
-        import main
+        from zyra.cli import app as main
         entradas = [
             "",       # boas-vindas
             "1", "1", "Ana Maria", "", "0",  # cadastrar
@@ -135,7 +135,7 @@ class TestesEtapa3(unittest.TestCase):
             "4", "",                          # resumo
             "0",                              # sair
         ]
-        with (patch("main.conectar", return_value=self.conexao),
+        with (patch("zyra.cli.app.conectar", return_value=self.conexao),
               patch("builtins.input", side_effect=entradas),
               contextlib.redirect_stdout(io.StringIO()) as saida):
             main.main()
@@ -148,16 +148,16 @@ class TestesEtapa3(unittest.TestCase):
         # Já fechada pelo main; tearDown será ajustado abaixo.
 
     def test_falha_de_conexao_nao_abre_menus(self):
-        import main
-        with (patch("main.conectar", side_effect=ValueError("Teste de falha")),
-              patch("main.exibir_menu") as menu,
+        from zyra.cli import app as main
+        with (patch("zyra.cli.app.conectar", side_effect=ValueError("Teste de falha")),
+              patch("zyra.cli.app.exibir_menu") as menu,
               contextlib.redirect_stdout(io.StringIO()) as saida):
             main.main()
         menu.assert_not_called()
         self.assertIn("Não foi possível conectar", saida.getvalue())
 
     def test_exclusao_cancelada_pelo_usuario(self):
-        from usuarios import excluir_usuario
+        from zyra.cli.usuarios import excluir_usuario
         id_usuario = self.repo.criar_usuario("Ana Maria")
         with patch("builtins.input", side_effect=[str(id_usuario), "2", ""]), contextlib.redirect_stdout(io.StringIO()):
             excluir_usuario(self.repo)

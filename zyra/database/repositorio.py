@@ -7,8 +7,8 @@ com commit; em caso de erro, a transação é revertida com rollback.
 from datetime import datetime
 from decimal import Decimal
 
-from constantes import BONUS_CADASTRO, MAX_PONTOS, VALOR_PASSAGEM
-from regras import (
+from zyra.core.constantes import BONUS_CADASTRO, MAX_PONTOS, VALOR_PASSAGEM
+from zyra.core.regras import (
     validar_credito, validar_indice_passagem, validar_nome_usuario,
     validar_saldo,
 )

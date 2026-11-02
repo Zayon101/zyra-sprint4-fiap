@@ -1,9 +1,9 @@
 """Pontos, passagens, histórico e estatísticas usando o banco Oracle."""
 
-from constantes import TIPOS_PASSAGEM, VALOR_PASSAGEM, VALOR_POR_PONTO
-from usuarios import listar_usuarios
-from relatorios import calcular_resumo
-from utils import formatar_data_troca, formatar_reais, pausar, validar_numero
+from zyra.core.constantes import TIPOS_PASSAGEM, VALOR_PASSAGEM, VALOR_POR_PONTO
+from zyra.cli.usuarios import listar_usuarios
+from zyra.core.relatorios import calcular_resumo
+from zyra.cli.utils import formatar_data_troca, formatar_reais, pausar, validar_numero
 
 
 def escolher_usuario(repositorio):

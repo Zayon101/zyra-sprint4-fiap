@@ -8,9 +8,9 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from banco import conectar
-from exportacao import exportar_consulta
-from repositorio import RepositorioOracle
+from zyra.database.banco import conectar
+from zyra.exportacao import exportar_consulta
+from zyra.database.repositorio import RepositorioOracle
 
 
 def validar_json(caminho: Path, tipo: str):

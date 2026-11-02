@@ -7,11 +7,11 @@ RepositorioOracle e as mesmas validações de negócio das Sprints anteriores.
 from contextlib import contextmanager
 from threading import Lock
 
-from api_clima import CatalogoClima, ErroAPI
-from banco import conectar
-from constantes import BONUS_CADASTRO, PONTOS_POR_PASSAGEM, TIPOS_PASSAGEM, VALOR_PASSAGEM
-from relatorios import calcular_resumo
-from repositorio import ErroBanco, RepositorioOracle
+from zyra.integrations.api_clima import CatalogoClima, ErroAPI
+from zyra.database.banco import conectar
+from zyra.core.constantes import BONUS_CADASTRO, PONTOS_POR_PASSAGEM, TIPOS_PASSAGEM, VALOR_PASSAGEM
+from zyra.core.relatorios import calcular_resumo
+from zyra.database.repositorio import ErroBanco, RepositorioOracle
 
 
 class ErroRequisicao(Exception):

@@ -7,11 +7,11 @@ from unittest.mock import Mock, patch
 
 import requests
 
-from api_clima import (
+from zyra.integrations.api_clima import (
     CatalogoClima, ErroAPI, PARAMETROS, URL_PREVISAO,
     consultar_clima, descrever_tempo, processar_resposta,
 )
-from clima import menu_clima, mostrar_clima_atual, mostrar_previsao
+from zyra.cli.clima import menu_clima, mostrar_clima_atual, mostrar_previsao
 from tests.oracle_simulado import ConexaoSimulada
 
 
@@ -222,11 +222,11 @@ class TestesAPIOpenMeteo(unittest.TestCase):
         self.assertIn("Dados em cache", saida.getvalue())
 
     def test_integracao_menu_principal_nao_modifica_oracle(self):
-        import main
+        from zyra.cli import app as main
         conexao = ConexaoSimulada()
         catalogo = CatalogoClima(consultar=Mock(return_value=processar_resposta(DADOS)))
-        with (patch("main.conectar", return_value=conexao),
-              patch("main.CatalogoClima", return_value=catalogo),
+        with (patch("zyra.cli.app.conectar", return_value=conexao),
+              patch("zyra.cli.app.CatalogoClima", return_value=catalogo),
               patch("builtins.input", side_effect=["", "6", "1", "", "0", "0"]),
               contextlib.redirect_stdout(io.StringIO()) as saida):
             main.main()
@@ -236,14 +236,14 @@ class TestesAPIOpenMeteo(unittest.TestCase):
         self.assertIn("Programa finalizado", saida.getvalue())
 
     def test_validador_com_requisicao_simulada(self):
-        from validar_api_clima import main as validar
-        with patch("validar_api_clima.consultar_clima", return_value=processar_resposta(DADOS)), contextlib.redirect_stdout(io.StringIO()) as saida:
+        from scripts.validar_api_clima import main as validar
+        with patch("scripts.validar_api_clima.consultar_clima", return_value=processar_resposta(DADOS)), contextlib.redirect_stdout(io.StringIO()) as saida:
             self.assertEqual(validar(), 0)
         self.assertIn("Etapa 6 validada", saida.getvalue())
 
     def test_validador_reporta_erro(self):
-        from validar_api_clima import main as validar
-        with patch("validar_api_clima.consultar_clima", side_effect=ErroAPI("erro de rede")), contextlib.redirect_stdout(io.StringIO()) as saida:
+        from scripts.validar_api_clima import main as validar
+        with patch("scripts.validar_api_clima.consultar_clima", side_effect=ErroAPI("erro de rede")), contextlib.redirect_stdout(io.StringIO()) as saida:
             self.assertEqual(validar(), 1)
         self.assertIn("erro de rede", saida.getvalue())
 

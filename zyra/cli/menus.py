@@ -1,10 +1,10 @@
 """Menus do Zyra, delegando operações às funções de cada módulo."""
 
-from constantes import PONTOS_POR_PASSAGEM, VALOR_PASSAGEM
-from exportacao import exportar_consulta
-from operacoes import adicionar_pontos, mostrar_passagens, trocar_pontos_por_passagem
-from usuarios import alterar_usuario, cadastrar_usuario, consultar_usuario, excluir_usuario, listar_usuarios
-from utils import formatar_reais, pausar, validar_numero
+from zyra.core.constantes import PONTOS_POR_PASSAGEM, VALOR_PASSAGEM
+from zyra.exportacao import exportar_consulta
+from zyra.cli.operacoes import adicionar_pontos, mostrar_passagens, trocar_pontos_por_passagem
+from zyra.cli.usuarios import alterar_usuario, cadastrar_usuario, consultar_usuario, excluir_usuario, listar_usuarios
+from zyra.cli.utils import formatar_reais, pausar, validar_numero
 
 
 def menu_crud(repositorio):

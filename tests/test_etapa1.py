@@ -6,8 +6,8 @@ import io
 import unittest
 from unittest.mock import patch
 
-import constantes
-from utils import formatar_reais, validar_nome, validar_numero
+from zyra.core import constantes
+from zyra.cli.utils import formatar_reais, validar_nome, validar_numero
 
 
 class TestesEtapa1(unittest.TestCase):
@@ -34,7 +34,7 @@ class TestesEtapa1(unittest.TestCase):
             self.assertEqual(validar_numero("Digite:"), 12)
 
     def test_mostrar_passagens_mantem_custos(self):
-        from operacoes import mostrar_passagens
+        from zyra.cli.operacoes import mostrar_passagens
         with contextlib.redirect_stdout(io.StringIO()) as saida:
             mostrar_passagens()
         self.assertIn("587 pontos", saida.getvalue())

@@ -1,6 +1,6 @@
 """Validações de negócio independentes do terminal e do Oracle."""
 
-from constantes import MAX_CARACTERES_NOME, MAX_PONTOS, TIPOS_PASSAGEM
+from zyra.core.constantes import MAX_CARACTERES_NOME, MAX_PONTOS, TIPOS_PASSAGEM
 
 
 def validar_nome_usuario(nome):

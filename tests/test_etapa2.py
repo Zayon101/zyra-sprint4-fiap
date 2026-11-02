@@ -11,10 +11,10 @@ import types
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
-import banco
-import main
-from preparar_banco import ler_instrucoes_sql, preparar_estrutura
-from testar_banco import TABELAS_ESPERADAS, verificar_conexao
+from zyra.database import banco
+from zyra.cli import app as main
+from scripts.preparar_banco import ler_instrucoes_sql, preparar_estrutura
+from scripts.testar_banco import TABELAS_ESPERADAS, verificar_conexao
 
 
 class TestesEtapa2(unittest.TestCase):
@@ -28,7 +28,7 @@ class TestesEtapa2(unittest.TestCase):
             "ORACLE_SID": "",
         }
         dados.update(variacoes)
-        with patch.dict(os.environ, dados, clear=True), patch("banco.load_dotenv"):
+        with patch.dict(os.environ, dados, clear=True), patch("zyra.database.banco.load_dotenv"):
             return banco.carregar_configuracao()
 
     def test_configuracao_com_nome_de_servico(self):
@@ -136,9 +136,9 @@ class TestesEtapa2(unittest.TestCase):
         from tests.oracle_simulado import ConexaoSimulada
         conexao = ConexaoSimulada()
         try:
-            with (patch("main.conectar", return_value=conexao),
-                  patch("main.exibir_boas_vindas"),
-                  patch("main.exibir_menu"),
+            with (patch("zyra.cli.app.conectar", return_value=conexao),
+                  patch("zyra.cli.app.exibir_boas_vindas"),
+                  patch("zyra.cli.app.exibir_menu"),
                   patch("builtins.input", side_effect=["3", "", "0"]),
                   contextlib.redirect_stdout(io.StringIO()) as saida):
                 main.main()

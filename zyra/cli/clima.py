@@ -2,8 +2,8 @@
 
 from datetime import datetime
 
-from api_clima import CatalogoClima, ErroAPI, FONTE
-from utils import pausar, validar_numero
+from zyra.integrations.api_clima import CatalogoClima, ErroAPI, FONTE
+from zyra.cli.utils import pausar, validar_numero
 
 
 def _formatar_valor(valor, unidade, casas=1):

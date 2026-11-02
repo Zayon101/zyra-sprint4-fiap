@@ -2,7 +2,7 @@
 
 from decimal import Decimal, ROUND_HALF_UP
 
-from constantes import PONTOS_POR_PASSAGEM, VALOR_PASSAGEM
+from zyra.core.constantes import PONTOS_POR_PASSAGEM, VALOR_PASSAGEM
 
 
 CENTAVOS = Decimal("0.01")

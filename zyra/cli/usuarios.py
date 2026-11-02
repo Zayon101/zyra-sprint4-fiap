@@ -1,7 +1,7 @@
 """Interações do CRUD de usuários; acesso SQL isolado em repositorio.py."""
 
-from constantes import BONUS_CADASTRO, VALOR_POR_PONTO
-from utils import formatar_reais, pausar, validar_nome, validar_numero
+from zyra.core.constantes import BONUS_CADASTRO, VALOR_POR_PONTO
+from zyra.cli.utils import formatar_reais, pausar, validar_nome, validar_numero
 
 
 def listar_usuarios(repositorio, pausar_ao_final=True):

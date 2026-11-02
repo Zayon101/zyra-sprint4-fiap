@@ -6,13 +6,13 @@ import json
 from threading import Thread
 import unittest
 
-from api_clima import CatalogoClima, ErroAPI
-from repositorio import RepositorioOracle
-from servidor_web import criar_servidor
-from servico_web import ErroRequisicao, ServicoZyra
+from zyra.integrations.api_clima import CatalogoClima, ErroAPI
+from zyra.database.repositorio import RepositorioOracle
+from zyra.web.servidor import criar_servidor
+from zyra.web.servico import ErroRequisicao, ServicoZyra
 from tests.oracle_simulado import ConexaoSimulada
 from tests.test_etapa6 import DADOS
-from api_clima import processar_resposta
+from zyra.integrations.api_clima import processar_resposta
 
 
 class TesteServicoWeb(unittest.TestCase):
