@@ -132,6 +132,7 @@ def exibir_menu():
     print("[3] Histórico de trocas")
     print("[4] Resumo do sistema")
     print("[5] Exportar consultas em JSON")
+    print("[6] Condições para sua viagem (clima)")
     print("-" * 40)
     print("[0] Encerrar")
     print("=" * 40)

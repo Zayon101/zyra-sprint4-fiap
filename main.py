@@ -1,7 +1,9 @@
-"""Ponto de entrada do Zyra - Sprint 4 (Etapa 5: exportação JSON)."""
+"""Ponto de entrada do Zyra - Sprint 4 (Etapa 6: API Open-Meteo)."""
 
+from api_clima import CatalogoClima
 from banco import conectar
 from menus import exibir_boas_vindas, exibir_menu, menu_crud, menu_operacoes, menu_exportacao
+from clima import menu_clima
 from operacoes import historico_trocas, resumo_sistema
 from repositorio import ErroBanco, RepositorioOracle
 
@@ -17,6 +19,7 @@ def main():
 
     try:
         repositorio = RepositorioOracle(conexao)
+        catalogo_clima = CatalogoClima()
         exibir_boas_vindas()
         opcao = -1
         while opcao != 0:
@@ -42,6 +45,8 @@ def main():
                         resumo_sistema(repositorio)
                     case 5:
                         menu_exportacao(repositorio)
+                    case 6:
+                        menu_clima(catalogo_clima)
                     case 0:
                         print("\nPrograma finalizado. Obrigado por utilizar a Zyra!")
                     case _:

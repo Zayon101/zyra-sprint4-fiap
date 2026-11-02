@@ -1,6 +1,6 @@
-# Zyra — Sprint 4 | Etapa 5: exportação JSON das consultas Oracle
+# Zyra — Sprint 4 | Etapa 6: integração com Open-Meteo
 
-Esta versão **continua a Etapa 4**, validada no Oracle Database da FIAP. Mantém CRUD, pontos, resgates e histórico e adiciona exportação de consultas SQL para arquivos JSON, sem substituir a persistência no banco.
+Esta versão **substitui a API Trilhos/ARTESP pela API meteorológica pública Open-Meteo**, sem cadastro, CPF, senha ou chave de API. As funcionalidades de Oracle da FIAP, CRUD, pontos, passagens, histórico e exportação JSON das etapas 1–5 foram preservadas.
 
 ## Integrantes
 
@@ -10,93 +10,77 @@ Esta versão **continua a Etapa 4**, validada no Oracle Database da FIAP. Manté
 - João Gabriel Dantas Moura — RM 573101 — 1TDSPH
 - Záyon Alves Marques — RM 571205 — 1TDSPH
 
-## Funcionalidades adicionadas
+## Objetivo e relação com o Zyra
 
-Na tela principal, foi incluída a opção **[5] Exportar consultas em JSON**, com um submenu:
+O Zyra converte pontos SoulUp em passagens. O recurso **Condições para sua viagem** ajuda a pessoa a planejar deslocamentos em São Paulo, consultando condições meteorológicas e previsão de chuva. Isso é **informação complementar sobre mobilidade**, não informa o funcionamento real das linhas de metrô e não interfere em saldo ou resgates.
 
-| Opção | Consulta realizada | Conteúdo do JSON |
-| --- | --- | --- |
-| 1 — Todos os usuários | SELECT de usuários e histórico | Lista de cadastros com saldos e resgates |
-| 2 — Usuário por ID | SELECT parametrizado por ID | Cadastro e histórico de um usuário |
-| 3 — Histórico por usuário | SELECT parametrizado por ID | Resgates, com ID, data, pontos e valor |
-| 4 — Resumo geral | SELECT de usuários e trocas | Totais de usuários, pontos, trocas, viagens e valores |
-| 0 — Voltar | — | Retorna ao menu anterior |
+### API usada
 
-As consultas reutilizam as funções existentes em `RepositorioOracle` (`repositorio.py`) e **não executam INSERT, UPDATE, DELETE nem COMMIT**.
+- Documentação oficial: https://open-meteo.com/en/docs
+- Endpoint público: `GET https://api.open-meteo.com/v1/forecast`
+- Coordenadas de referência: centro de São Paulo (`latitude=-23.5505`, `longitude=-46.6333`)
+- Fuso: `America/Sao_Paulo`
+- Condições atuais (`current`): temperatura, sensação térmica, umidade, precipitação, vento e código meteorológico WMO.
+- Previsão (`daily`): máximas, mínimas, chance máxima de chuva, precipitação total estimada e condição prevista para três dias.
+- Formato de resposta: **JSON**.
+- **Não exige API Key** para acesso público não comercial, respeitadas as condições de uso do provedor.
+- A API oferece dados meteorológicos previstos/modelados: não equivalem a observações de uma estação física nem a status do transporte.
 
-A tela de resumo e o arquivo JSON agora compartilham a função `calcular_resumo()` do módulo `relatorios.py` para evitar divergências de cálculo.
+## Instalação e configuração
 
-## Como instalar e executar no Windows
+1. Extraia o projeto ou aplique apenas os arquivos da atualização na pasta do projeto atual.
+2. Preserve o arquivo `.env` **já configurado para o Oracle da FIAP**. Não compartilhe esse arquivo ou o inclua na entrega. Caso ainda não exista, copie `.env.example` para `.env` e configure as variáveis Oracle.
+3. **Não precisa configurar nenhuma variável da Open-Meteo**. Se houver uma `ARTESP_API_KEY` antiga no seu `.env`, ela pode ser removida; não é mais utilizada.
+4. No terminal do projeto, execute:
 
-1. Extraia o ZIP em uma pasta nova, mantendo uma cópia da Etapa 4.
-2. Copie **somente** o arquivo `.env` da sua Etapa 4 para a pasta desta etapa. Não altere suas tabelas Oracle.
-3. Dentro da pasta do projeto, execute:
+   ```powershell
+   python -m pip install -r requirements.txt
+   python -m unittest discover -s tests -v
+   python validar_api_clima.py
+   python main.py
+   ```
 
-```powershell
-py -m pip install -r requirements.txt
-py testar_banco.py
-py -m unittest discover -s tests -v
-py main.py
-```
+5. No menu principal do Zyra, escolha **[6] Condições para sua viagem (clima)**:
+   - **[1]** condições atuais na região central de São Paulo;
+   - **[2]** previsão meteorológica para os próximos três dias;
+   - **[3]** atualizar manualmente os dados quando passaram pelo menos cinco minutos desde a consulta anterior;
+   - **[0]** voltar ao menu principal.
 
-O banco deve exibir `[OK]` para `ZYRA_USUARIOS` e `ZYRA_TROCAS`. No menu principal, pressione **5** para abrir as exportações. Ao terminar, o programa informa o caminho completo do arquivo criado.
+O módulo mantém os dados em cache durante a execução; consultar outra opção do menu não faz nova requisição. A opção de atualização somente faz outra consulta após o intervalo mínimo. Reiniciar o programa reinicia o cache.
 
-### Onde ficam os arquivos?
+## Arquivos envolvidos na substituição
 
-São gravados na pasta **`exportacoes/`**, criada automaticamente ao lado de `main.py`.
-
-Exemplos de nomes gerados:
-
-- `zyra_usuarios_20261101_103000_123456.json`
-- `zyra_usuario_4_20261101_103001_123456.json`
-- `zyra_historico_4_20261101_103002_123456.json`
-- `zyra_resumo_20261101_103003_123456.json`
-
-O timestamp torna os nomes únicos na prática, e o modo de criação exclusiva (`x`) impede sobrescrever um arquivo já existente mesmo em caso de colisão. O arquivo usa UTF-8, indentação de 4 espaços e acentos preservados. Datas de trocas são exportadas em texto ISO 8601, como `2026-11-01T10:30:00`.
-
-Quando não existe nenhum usuário, a exportação geral gera uma lista vazia válida. Para consultas por ID inexistente, **nenhum arquivo é criado**.
-
-> **Privacidade:** os arquivos JSON podem incluir nomes, IDs e históricos dos cadastros. A pasta `exportacoes/` está no `.gitignore`. Evite compartilhar exportações com dados reais sem revisar o conteúdo.
-
-## Como validar com o Oracle real da FIAP
-
-Depois de executar o `testar_banco.py`, rode:
-
-```powershell
-py validar_exportacao_oracle.py
-```
-
-Esse teste automatizado **não modifica o banco de dados**. Faz consultas reais, exporta para uma pasta temporária, confere os JSONs e **remove os arquivos temporários** ao final. Verifica:
-
-1. Todos os usuários e sua quantidade.
-2. O resumo geral e os totais.
-3. Um cadastro por ID e o histórico desse cadastro, **se houver ao menos um usuário**.
-
-Se não houver usuários no banco, o teste informa que os dois casos por ID não puderam ser exercitados. Nesse caso, cadastre um usuário de teste no `main.py` e execute novamente, se desejar validar todos os cenários. O script de validação não cria nem exclui usuários.
-
-O programa principal, por outro lado, **mantém** os JSONs exportados na pasta `exportacoes/`, para serem utilizados na entrega acadêmica.
-
-## Principais arquivos adicionados ou modificados
-
-| Arquivo | Papel |
+| Arquivo | Responsabilidade |
 | --- | --- |
-| `exportacao.py` | Montagem dos dados, serialização JSON e escrita segura |
-| `relatorios.py` | Cálculo único dos indicadores da tela e do JSON |
-| `menus.py` | Novo submenu de exportação |
-| `main.py` | Nova opção `[5]` do menu principal |
-| `operacoes.py` | Reutilização dos cálculos de `relatorios.py` |
-| `validar_exportacao_oracle.py` | Validação com consultas Oracle reais e arquivos temporários |
-| `tests/test_etapa5.py` | Testes automatizados dos quatro tipos de exportação |
-| `.gitignore` | Exclusão dos JSONs exportados do controle de versão |
+| `api_clima.py` | Requisição HTTP, tratamento de erros, normalização JSON, tradução WMO, cache |
+| `clima.py` | Submenu, exibição de condições atuais e previsão |
+| `validar_api_clima.py` | Teste da API real, independente do Oracle |
+| `main.py` | Conecta a opção 6 ao módulo de clima |
+| `menus.py` | Altera o texto da opção 6 |
+| `.env.example` | Remove variável de chave ARTESP |
+| `tests/test_etapa6.py` | Novos testes da integração Open-Meteo |
+| `README.md` | Instruções revisadas |
 
-Os demais módulos da Etapa 4 foram preservados, incluindo SQL, conexão Oracle, operações de resgate e validações.
+**Arquivos removidos da versão anterior:** `api_trilhos.py`, `estacoes.py` e `validar_api_metro.py` (e eventual `api_estacoes.py` da Overpass). Esses arquivos não são necessários na nova versão.
 
-## Limitações e próximos passos
+**Arquivos não alterados pela migração:** `banco.py`, `repositorio.py`, `usuarios.py`, `operacoes.py`, `criar_tabelas.sql`, `exportacao.py` e as regras de pontuação. **Não recrie as tabelas Oracle.**
 
-- Os testes automatizados de unidade e integração simulada usam SQLite; o teste `validar_exportacao_oracle.py` verifica a exportação em **Oracle real** somente no seu ambiente da FIAP.
-- Os valores de passagem seguem as regras didáticas do Zyra e não equivalem necessariamente às tarifas oficiais atuais.
-- Exportação JSON é **cópia dos resultados consultados**, não um mecanismo de sincronização bidirecional com o Oracle. As alterações de usuários e pontos continuam ocorrendo exclusivamente no banco.
-- Não é necessário executar novamente `preparar_banco.py` ou `criar_tabelas.sql`.
-- Para a entrega da Sprint 4, registrem os prompts de IA usados e uma análise crítica das sugestões, das modificações e das verificações feitas pela equipe, como pede o enunciado.
+## Testes e tratamento de erros
 
-**Próxima etapa:** integração com uma API externa pública relevante para o Zyra (consulta de estações de metrô).
+- Os testes automatizados não dependem de rede, de credenciais ou do banco real.
+- Os cenários cobrem resposta válida, JSON incompleto, campos inconsistentes, falta de dados, códigos WMO, timeout, erro HTTP, falha de rede, cache, navegação nos menus e ausência de alterações no Oracle.
+- **85 testes locais aprovados** após a substituição, abrangendo também a regressão das etapas anteriores.
+- A conexão HTTP direta não pôde ser verificada neste ambiente; execute `python validar_api_clima.py` no Windows e confirme a mensagem `[OK]`. Se houver falha, envie o texto do terminal sem credenciais.
+- Se a Open-Meteo falhar, o Zyra exibe o erro e permite retornar ao menu. O banco não é modificado pela consulta meteorológica.
+- O arquivo JSON `dados_zyra.json` da Sprint 3 não é mais a base principal dos usuários; os registros continuam no Oracle.
+
+## Como explicar na Sprint 4
+
+O código faz um `GET` com a biblioteca `requests`, passando latitude, longitude, indicadores e fuso como parâmetros. A Open-Meteo responde em JSON; o programa valida tipos e campos, interpreta códigos WMO e apresenta valores no terminal. O uso do cache evita consultas repetidas e `try`/`except` trata falhas de rede e respostas inválidas. Explique que os dados de clima são **relevantes para o planejamento do deslocamento**, em complemento à emissão de passagens. O enunciado também permite a alternativa de integração bidirecional com o front-end, que **ainda não foi implementada** nesta etapa.
+
+A documentação/vídeo da entrega deve incluir os prompts de IA efetivamente utilizados, avaliação crítica das sugestões, alterações realizadas pela equipe e relação com o conteúdo estudado.
+
+## Referências
+
+- Open-Meteo Weather Forecast API: https://open-meteo.com/en/docs
+- Open-Meteo (repositório e condições de acesso público não comercial): https://github.com/open-meteo/open-meteo
