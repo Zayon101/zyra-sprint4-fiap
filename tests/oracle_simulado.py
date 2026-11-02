@@ -59,8 +59,8 @@ class CursorSimulado:
 
 
 class ConexaoSimulada:
-    def __init__(self):
-        self.db = sqlite3.connect(":memory:")
+    def __init__(self, permitir_multiplas_threads=False):
+        self.db = sqlite3.connect(":memory:", check_same_thread=not permitir_multiplas_threads)
         self.db.executescript("""
             CREATE TABLE ZYRA_USUARIOS (
                 ID INTEGER PRIMARY KEY AUTOINCREMENT,
