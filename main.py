@@ -7,10 +7,11 @@ O Oracle pode reconectar automaticamente com credenciais salvas localmente.
 from contextlib import contextmanager
 from getpass import getpass
 from threading import Thread
+from pathlib import Path
 import webbrowser
 
 from api.clima import CatalogoClima
-from api.servidor import criar_servidor
+from api.servidor import criar_servidor, localizar_frontend
 from api.servico import ServicoZyra
 from sistema.clima import menu_clima
 from sistema.menus import exibir_boas_vindas, exibir_menu, menu_crud, menu_exportacao, menu_operacoes
@@ -268,6 +269,14 @@ class Zyra:
                 print(f"\nNão foi possível iniciar a página web: {erro}")
                 return
             print("\n[OK] Servidor web iniciado.")
+            pasta_react = localizar_frontend()
+            if pasta_react:
+                print(f"[OK] Interface React encontrada: {pasta_react.relative_to(Path(__file__).resolve().parent)}")
+            else:
+                print("[AVISO] React compilado não encontrado. Para ativá-lo:")
+                print("        cd frontend/zyra-app")
+                print("        npm run build")
+                print("        Depois, atualize a página no navegador.")
             if not banco_disponivel:
                 print("[AVISO] Sem Oracle preparado: página, clima e passagens disponíveis;")
                 print("        consultas e alterações de usuários retornarão HTTP 503.")

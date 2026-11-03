@@ -1,4 +1,15 @@
-# Credenciais locais (contêm senha em texto simples). NÃO versionar.
-conexao_oracle.local.json
-# Exportações geradas (opcionais, se forem movidas para esta pasta)
-__pycache__/
+# Credenciais pessoais — nunca versionar ou enviar na entrega
+sistema/conexao_oracle.local.json
+**/conexao_oracle.local.json
+
+# Arquivos gerados automaticamente
+**/__pycache__/
+*.py[cod]
+frontend/zyra-app/node_modules/
+frontend/zyra-app/dist/
+frontend/node_modules/
+frontend/dist/
+
+# Exportações e configurações locais
+exportacoes/
+*.local.json

@@ -16,8 +16,21 @@ from api.servico import ErroRequisicao, ServicoZyra
 from api.pessoal import COOKIE_NOME, ServicoPessoal
 
 
-PASTA_FRONTEND = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+RAIZ_PROJETO = Path(__file__).resolve().parent.parent
+PASTAS_FRONTEND = (
+    RAIZ_PROJETO / "frontend" / "zyra-app" / "dist",
+    RAIZ_PROJETO / "frontend" / "dist",
+)
 TAMANHO_MAX_JSON = 16 * 1024
+
+
+def localizar_frontend() -> Path | None:
+    """Localiza o build React, inclusive quando o aplicativo está em frontend/zyra-app.
+
+    A verificação é feita a cada acesso, permitindo compilar o React
+    sem precisar reiniciar o servidor Python.
+    """
+    return next((pasta for pasta in PASTAS_FRONTEND if (pasta / "index.html").is_file()), None)
 
 
 def criar_servidor(porta=8765, servico=None, banco_disponivel=True):
@@ -81,7 +94,8 @@ def criar_servidor(porta=8765, servico=None, banco_disponivel=True):
 
         def _arquivo_frontend(self, rota: str) -> None:
             """Entrega assets do build do React e aplica fallback às rotas SPA."""
-            if not (PASTA_FRONTEND / "index.html").is_file():
+            pasta_frontend = localizar_frontend()
+            if pasta_frontend is None:
                 pagina = (
                     "<!doctype html><html lang='pt-BR'><head><meta charset='utf-8'>"
                     "<meta name='viewport' content='width=device-width,initial-scale=1'>"
@@ -96,13 +110,13 @@ def criar_servidor(porta=8765, servico=None, banco_disponivel=True):
                     + ("<p style='color:#914d00'><strong>Oracle ainda não preparado.</strong> "
                        "O painel pode abrir, mas cadastros, saldos e históricos "
                        "precisam da conexão no menu [7].</p>" if not banco_disponivel else "")
-                    + "<p>A interface React será adicionada posteriormente. "
-                    "A API Python já está disponível neste endereço.</p>"
+                    + "<p>O servidor Python está funcionando, mas não encontrou o "
+                    "React compilado. Execute <code>npm run build</code> "
+                    "na pasta <code>frontend/zyra-app</code> e atualize esta página.</p>"
                     "<p><a href='/api/status'>Testar status da API</a> · "
                     "<a href='/api/passagens'>Consultar passagens</a></p>"
-                    "<p>Quando o projeto React estiver pronto, coloque os arquivos "
-                    "em <code>frontend/</code>, execute o build e abra novamente "
-                    "esta página.</p></main></body></html>"
+                    "<p>O build deve ficar em <code>frontend/zyra-app/dist/</code> "
+                    "(ou <code>frontend/dist/</code>).</p></main></body></html>"
                 )
                 conteudo = pagina.encode("utf-8")
                 self._cabecalhos(200, "text/html; charset=utf-8", len(conteudo))
@@ -114,7 +128,7 @@ def criar_servidor(porta=8765, servico=None, banco_disponivel=True):
             if any(item.startswith(".") for item in Path(relativo).parts):
                 self._erro(404, "Arquivo não encontrado.")
                 return
-            raiz = PASTA_FRONTEND.resolve()
+            raiz = pasta_frontend.resolve()
             destino = (raiz / relativo).resolve()
             if not destino.is_relative_to(raiz):
                 self._erro(404, "Arquivo não encontrado.")
