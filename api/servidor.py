@@ -96,27 +96,105 @@ def criar_servidor(porta=8765, servico=None, banco_disponivel=True):
             """Entrega assets do build do React e aplica fallback às rotas SPA."""
             pasta_frontend = localizar_frontend()
             if pasta_frontend is None:
+                aviso_oracle = (
+                    """<div class="aviso" role="alert"><strong>Oracle não conectado.</strong> """
+                    """O site pode abrir, mas cadastros, pontos e histórico exigem """
+                    """uma conexão pela opção [7] do menu Python.</div>"""
+                    if not banco_disponivel else ""
+                )
+                codigo_fonte_react = (RAIZ_PROJETO / "frontend" / "zyra-app" / "package.json").is_file()
+                aviso_react = (
+                    """<div class="aviso"><strong>Pasta React não encontrada.</strong> """
+                    """Confirme que o projeto React foi colocado em """
+                    """<code>frontend/zyra-app/</code> e contém o arquivo """
+                    """<code>package.json</code>.</div>"""
+                    if not codigo_fonte_react else ""
+                )
                 pagina = (
-                    "<!doctype html><html lang='pt-BR'><head><meta charset='utf-8'>"
-                    "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-                    "<title>Zyra — Página web</title>"
-                    "<style>body{font:16px system-ui,sans-serif;background:#f7f8fa;"
-                    "color:#232b35;margin:0;min-height:100vh;display:grid;place-items:center}"
-                    "main{background:white;max-width:560px;margin:20px;padding:35px;"
-                    "border:1px solid #e0e4e9;border-radius:16px}"
-                    "a{color:#1e6b5d}code{background:#f1f3f5;padding:3px 5px}</style>"
-                    "</head><body><main><h1>Zyra 🚇</h1>"
-                    "<h2>Servidor web funcionando!</h2>"
-                    + ("<p style='color:#914d00'><strong>Oracle ainda não preparado.</strong> "
-                       "O painel pode abrir, mas cadastros, saldos e históricos "
-                       "precisam da conexão no menu [7].</p>" if not banco_disponivel else "")
-                    + "<p>O servidor Python está funcionando, mas não encontrou o "
-                    "React compilado. Execute <code>npm run build</code> "
-                    "na pasta <code>frontend/zyra-app</code> e atualize esta página.</p>"
-                    "<p><a href='/api/status'>Testar status da API</a> · "
-                    "<a href='/api/passagens'>Consultar passagens</a></p>"
-                    "<p>O build deve ficar em <code>frontend/zyra-app/dist/</code> "
-                    "(ou <code>frontend/dist/</code>).</p></main></body></html>"
+                    """<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zyra — Como abrir o painel web</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 32px 16px;
+           display: grid; place-items: center; font: 16px/1.6 system-ui, sans-serif;
+           background: #f6f7f7; color: #293330; }
+    main { width: min(100%, 740px); background: white; border: 1px solid #dce3df;
+           border-radius: 18px; padding: clamp(24px, 5vw, 42px);
+           box-shadow: 0 8px 26px #263d3210; }
+    .marca { color: #891734; font-weight: 750; font-size: 30px; margin: 0; }
+    h1 { color: #355849; font-size: clamp(24px, 4vw, 30px); line-height: 1.2;
+         margin: 12px 0; }
+    h2 { color: #355849; font-size: 18px; margin: 28px 0 12px; }
+    p { margin: 10px 0 16px; }
+    ol { padding-left: 23px; }
+    li { padding-left: 6px; margin-bottom: 13px; }
+    code, pre { font: 14px/1.5 Consolas, 'Courier New', monospace; }
+    code { background: #f1f4f2; padding: 2px 5px; border-radius: 4px;
+           overflow-wrap: anywhere; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #202b28;
+          color: #f2f6f3; border-radius: 10px; padding: 15px 17px; margin: 8px 0; }
+    pre code { background: none; padding: 0; color: inherit; }
+    .aviso { background: #fff7e7; border-left: 4px solid #c4832c;
+             padding: 12px 16px; margin: 18px 0; border-radius: 6px; }
+    .acoes { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 0; }
+    .botao { display: inline-block; background: #355849; color: white;
+             text-decoration: none; border-radius: 8px; padding: 10px 16px;
+             font-weight: 650; }
+    .botao:hover, .botao:focus-visible { background: #274439; }
+    a { color: #416657; }
+    .nota { color: #52645b; font-size: 14px; }
+    hr { border: none; border-top: 1px solid #dce3df; margin: 28px 0; }
+  </style>
+</head>
+<body>
+<main>
+  <p class="marca">Zyra 🚇</p>
+  <h1>O servidor Python está funcionando!</h1>
+  <p>A página principal ainda não foi encontrada porque o <strong>React não está
+     compilado</strong> ou está em outra pasta. Siga estes passos para abrir
+     o <strong>painel completo</strong>:</p>
+""" + aviso_oracle + aviso_react + """
+  <h2>Como abrir a interface correta</h2>
+  <ol>
+    <li>Abra um <strong>segundo terminal</strong> no VS Code, na pasta principal
+        do Zyra (onde está <code>main.py</code>).</li>
+    <li>Entre na pasta do projeto React e instale as dependências:
+      <pre><code>cd frontend/zyra-app
+npm ci</code></pre>
+      <span class="nota">O <code>npm ci</code> normalmente só precisa ser executado
+      na primeira instalação ou quando as dependências mudarem.</span>
+    </li>
+    <li>Compile o React:
+      <pre><code>npm run build</code></pre>
+      <span class="nota">Isso deve criar o arquivo
+      <code>frontend/zyra-app/dist/index.html</code>.</span>
+    </li>
+    <li>Mantenha o Python aberto e volte para
+      <a href="/painel"><strong>http://127.0.0.1:8765/painel</strong></a>.
+      Atualize a página com <strong>Ctrl + F5</strong>.</li>
+  </ol>
+  <div class="acoes">
+    <a class="botao" href="/painel">Tentar abrir o painel</a>
+    <a href="/api/status">Verificar conexão com a API</a>
+  </div>
+  <hr>
+  <h2>Quer trabalhar no React sem compilar a cada alteração?</h2>
+  <p>Na pasta <code>frontend/zyra-app</code>, execute
+     <code>npm run dev</code> e abra
+     <a href="http://localhost:5173/painel">http://localhost:5173/painel</a>.
+     Deixe também o servidor Python ligado para que o React consiga
+     consultar os dados do Oracle.</p>
+  <p class="nota">O Python procura o build em
+     <code>frontend/zyra-app/dist/</code> ou <code>frontend/dist/</code>.
+     Depois de compilar, não é necessário reiniciar o servidor Python.</p>
+</main>
+</body>
+</html>"""
                 )
                 conteudo = pagina.encode("utf-8")
                 self._cabecalhos(200, "text/html; charset=utf-8", len(conteudo))
