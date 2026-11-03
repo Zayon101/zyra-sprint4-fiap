@@ -6,12 +6,18 @@ com commit; em caso de erro, a transação é revertida com rollback.
 
 from datetime import datetime
 from decimal import Decimal
+import logging
+
+from zyra.core.modelos import Usuario
 
 from zyra.core.constantes import BONUS_CADASTRO, MAX_PONTOS, VALOR_PASSAGEM
 from zyra.core.regras import (
     validar_credito, validar_indice_passagem, validar_nome_usuario,
     validar_saldo,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class ErroBanco(RuntimeError):
@@ -24,8 +30,11 @@ class RepositorioOracle:
     def __init__(self, conexao):
         self.conexao = conexao
 
-    def listar_usuarios(self):
-        """Consulta usuários e históricos existentes diretamente no Oracle."""
+    def listar_usuarios(self, incluir_historico: bool = True) -> list[Usuario]:
+        """Lista os usuários; permite omitir históricos para telas resumidas.
+
+        Sem argumento mantém a estrutura completa usada pela API e exportação.
+        """
         try:
             with self.conexao.cursor() as cursor:
                 cursor.execute("SELECT ID, NOME, PONTOS FROM ZYRA_USUARIOS ORDER BY ID")
@@ -38,6 +47,8 @@ class RepositorioOracle:
                     }
                     for id_usuario, nome, pontos in cursor.fetchall()
                 }
+                if not incluir_historico:
+                    return list(usuarios.values())
                 cursor.execute(
                     """SELECT ID, USUARIO_ID, PASSAGEM, VIAGENS,
                               CUSTO_PONTOS, VALOR_REAIS, DATA_TROCA
@@ -55,10 +66,22 @@ class RepositorioOracle:
                             "valor": float(valor),
                         })
                 return list(usuarios.values())
+        except (TypeError, KeyError, AttributeError) as erro:
+            logger.exception("Erro inesperado ao processar dados de usuários.")
+            raise
         except Exception as erro:
             raise ErroBanco("Falha ao consultar usuários no Oracle.") from erro
 
-    def consultar_usuario(self, id_usuario):
+    def possui_usuarios(self) -> bool:
+        """Verifica a existência de cadastros sem carregar histórico ou lista."""
+        try:
+            with self.conexao.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) FROM ZYRA_USUARIOS")
+                return cursor.fetchone()[0] > 0
+        except Exception as erro:
+            raise ErroBanco("Falha ao verificar cadastros no Oracle.") from erro
+
+    def consultar_usuario(self, id_usuario: int) -> Usuario | None:
         """Consulta o usuário por ID, incluindo seu histórico de resgates."""
         try:
             with self.conexao.cursor() as cursor:
@@ -92,11 +115,14 @@ class RepositorioOracle:
                         "valor": float(valor),
                     })
                 return usuario
+        except (TypeError, KeyError, AttributeError) as erro:
+            logger.exception("Erro inesperado ao processar cadastro do usuário.")
+            raise
         except Exception as erro:
             raise ErroBanco("Falha ao consultar usuário no Oracle.") from erro
 
     @staticmethod
-    def _data_iso(data):
+    def _data_iso(data: datetime | str) -> str:
         """Converte data do Oracle para texto ISO facilmente serializável."""
         if isinstance(data, datetime):
             return data.isoformat(timespec="seconds")
@@ -104,7 +130,7 @@ class RepositorioOracle:
             return data.replace(" ", "T")
         raise ValueError("Data de troca inválida retornada pelo banco.")
 
-    def criar_usuario(self, nome):
+    def criar_usuario(self, nome: str) -> int:
         """Insere um cadastro com bônus inicial e devolve o ID gerado."""
         nome = validar_nome_usuario(nome)
         try:
@@ -119,11 +145,15 @@ class RepositorioOracle:
                 id_criado = int(novo_id.getvalue()[0])
             self.conexao.commit()
             return id_criado
+        except (TypeError, AttributeError, KeyError):
+            self.conexao.rollback()
+            logger.exception("Erro inesperado durante o cadastro.")
+            raise
         except Exception as erro:
             self.conexao.rollback()
             raise ErroBanco("Falha ao cadastrar usuário no Oracle.") from erro
 
-    def alterar_nome(self, id_usuario, nome):
+    def alterar_nome(self, id_usuario: int, nome: str) -> bool:
         """Altera o nome e retorna False se o usuário não existir."""
         nome = validar_nome_usuario(nome)
         return self._alterar(
@@ -131,7 +161,7 @@ class RepositorioOracle:
             {"nome": nome, "id": id_usuario},
         )
 
-    def alterar_pontos(self, id_usuario, pontos):
+    def alterar_pontos(self, id_usuario: int, pontos: int) -> bool:
         """Define o saldo de pontos e retorna False para ID inexistente."""
         validar_saldo(pontos)
         return self._alterar(
@@ -139,13 +169,13 @@ class RepositorioOracle:
             {"pontos": pontos, "id": id_usuario},
         )
 
-    def excluir_usuario(self, id_usuario):
+    def excluir_usuario(self, id_usuario: int) -> bool:
         """Exclui o cadastro pelo ID (Oracle apaga o histórico em cascata)."""
         return self._alterar(
             "DELETE FROM ZYRA_USUARIOS WHERE ID = :id", {"id": id_usuario}
         )
 
-    def _alterar(self, sql, parametros):
+    def _alterar(self, sql: str, parametros: dict) -> bool:
         """Executa uma alteração parametrizada com transação explícita."""
         try:
             with self.conexao.cursor() as cursor:
@@ -153,11 +183,15 @@ class RepositorioOracle:
                 alterados = cursor.rowcount
             self.conexao.commit()
             return alterados == 1
+        except (TypeError, AttributeError, KeyError):
+            self.conexao.rollback()
+            logger.exception("Erro inesperado durante alteração SQL.")
+            raise
         except Exception as erro:
             self.conexao.rollback()
             raise ErroBanco("Falha ao alterar dados no Oracle.") from erro
 
-    def adicionar_pontos(self, id_usuario, quantidade):
+    def adicionar_pontos(self, id_usuario: int, quantidade: int) -> int | None:
         """Soma pontos diretamente no banco, sem sobrescrever um saldo antigo."""
         validar_credito(quantidade)
         try:
@@ -183,11 +217,15 @@ class RepositorioOracle:
         except ValueError:
             self.conexao.rollback()
             raise
+        except (TypeError, AttributeError, KeyError):
+            self.conexao.rollback()
+            logger.exception("Erro inesperado durante crédito de pontos.")
+            raise
         except Exception as erro:
             self.conexao.rollback()
             raise ErroBanco("Falha ao adicionar pontos no Oracle.") from erro
 
-    def resgatar_passagem(self, id_usuario, indice_passagem):
+    def resgatar_passagem(self, id_usuario: int, indice_passagem: int) -> tuple[bool, int | None]:
         """Desconta pontos e registra a troca em uma única transação.
 
         Retorna (sucesso, saldo_atual). Nenhuma alteração ocorre se o saldo
@@ -226,6 +264,10 @@ class RepositorioOracle:
             self.conexao.commit()
             return True, saldo_final
         except ErroBanco:
+            raise
+        except (TypeError, AttributeError, KeyError):
+            self.conexao.rollback()
+            logger.exception("Erro inesperado durante resgate de passagem.")
             raise
         except Exception as erro:
             self.conexao.rollback()

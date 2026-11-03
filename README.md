@@ -1,6 +1,6 @@
-# Zyra — Sprint 4 | Lote 8C: organização do backend
+# Zyra — Sprint 4 | Backend Python
 
-Sistema acadêmico que simula a conversão de pontos SoulUp em passagens de metrô. O Oracle da FIAP é a fonte principal dos dados para o terminal e para a API HTTP local. A Open-Meteo fornece informações climáticas para auxiliar no planejamento de viagens.
+Sistema acadêmico da FIAP que simula a conversão de pontos SoulUp em passagens de metrô. O **Oracle da FIAP** é a fonte principal dos usuários, saldos e históricos. A API HTTP local permite que o front-end React, mantido em **outro repositório**, consulte e altere os mesmos dados. A Open-Meteo oferece uma consulta adicional de condições climáticas.
 
 ## Integrantes
 
@@ -10,89 +10,98 @@ Sistema acadêmico que simula a conversão de pontos SoulUp em passagens de metr
 - João Gabriel Dantas Moura — RM 573101 — 1TDSPH
 - Záyon Alves Marques — RM 571205 — 1TDSPH
 
-## Estrutura
+## Organização
 
 ```text
 zyra-sprint4-fiap/
-├── main.py                    # Inicia a interface de terminal
-├── servidor_web.py            # Inicia o painel HTTP local
+├── main.py                    # Entrada da interface de terminal
+├── servidor_web.py            # Entrada da API HTTP local
 ├── zyra/
-│   ├── cli/                   # Menus, entradas e operações no terminal
-│   │   ├── app.py
-│   │   ├── menus.py
-│   │   ├── usuarios.py
-│   │   ├── operacoes.py
-│   │   ├── clima.py
-│   │   └── utils.py
-│   ├── core/                  # Regras de negócio e estatísticas
-│   │   ├── constantes.py
-│   │   ├── regras.py
-│   │   └── relatorios.py
-│   ├── database/              # Conexão e persistência Oracle
-│   │   ├── banco.py
-│   │   └── repositorio.py
-│   ├── integrations/          # Integração externa Open-Meteo
-│   │   └── api_clima.py
-│   ├── web/                   # API HTTP e serviço web
-│   │   ├── servidor.py
-│   │   └── servico.py
-│   └── exportacao.py           # Exportação das consultas em JSON
-├── scripts/                   # Preparação, migração e diagnósticos
-├── sql/                       # DDL do Oracle
-│   └── criar_tabelas.sql
-├── painel_web/                # Painel de demonstração independente
-├── integracao_react/          # Exemplo para consumir a API no React
-├── tests/                     # Testes automatizados e banco simulado
+│   ├── cli/                   # Menus, formulários e apresentação no terminal
+│   ├── core/                  # Constantes, validações, modelos tipados e relatórios
+│   ├── database/              # Configuração e repositório SQL do Oracle
+│   ├── integrations/          # Consumo da API Open-Meteo
+│   ├── web/                   # API HTTP e sessões pessoais demonstrativas
+│   └── exportacao.py          # Exportação de consultas SQL para JSON
+├── scripts/                   # Preparação, importação e validadores manuais
+├── sql/                       # Script de criação do esquema Oracle
+├── tests/                     # Testes por funcionalidade + Oracle simulado
+├── examples/
+│   ├── painel_web/            # Demonstração HTML independente (opcional)
+│   └── integracao_react/      # Exemplo histórico de cliente TypeScript (opcional)
 ├── requirements.txt
 ├── .env.example
 └── .gitignore
 ```
 
-**O que mudou no Lote 8C:** organização em pacotes, imports absolutos, localização correta do `.env`, do SQL, do painel e dos arquivos exportados, e atualização dos comandos dos scripts. **Não foram alterados** os endpoints HTTP, os valores de pontos, o modelo das tabelas ou as regras de transações. O painel de demonstração também foi preservado.
+A estrutura tipada dos dados está em `zyra/core/modelos.py`. A regra de nomes é compartilhada entre terminal, API HTTP e importação de JSON: de 3 a 120 caracteres, com letras Unicode, espaços, hífens e apóstrofos. O catálogo de passagens e os valores simulados permanecem inalterados.
 
-## Como atualizar seu projeto
+## Preparação local
 
-1. **Salve uma cópia da pasta atual** ou faça commit/backup antes da substituição.
-2. Extraia o pacote em uma **nova pasta**. Não sobreponha o conteúdo à estrutura antiga: arquivos que mudaram de lugar poderiam ficar duplicados.
-3. Copie apenas seu arquivo `.env` anterior para a **raiz da pasta nova**; não compartilhe suas credenciais.
-4. Instale as dependências, se necessário: `python -m pip install -r requirements.txt`.
-5. Abra um terminal **na raiz do projeto** para executar os comandos seguintes.
-6. Se os testes passarem e o banco estiver acessível, substitua sua pasta de trabalho, removendo os arquivos antigos do Git com `git add -A`.
+1. Use Python 3.11 ou superior (os testes foram executados em Python 3.14).
+2. Na raiz do repositório, execute `python -m pip install -r requirements.txt`.
+3. Copie `.env.example` para `.env` e configure o acesso ao Oracle. **Nunca publique ou envie o `.env` preenchido.**
+4. Se a estrutura do banco já existir na FIAP, **não é necessário** executar o criador de tabelas.
 
-## Execução
+## Comandos
 
-| Ação | Comando (na raiz) |
+| Objetivo | Comando |
 |---|---|
-| Testes automatizados | `python -m unittest discover -s tests -v` |
-| Diagnóstico de conexão Oracle | `python -m scripts.testar_banco` |
-| Programa em terminal | `python main.py` |
-| Servidor e painel HTTP local | `python servidor_web.py` |
-| Testar API Open-Meteo | `python -m scripts.validar_api_clima` |
+| Testes automatizados locais | `python -m unittest discover -s tests -v` |
+| Iniciar terminal | `python main.py` |
+| Iniciar API HTTP e painel opcional | `python servidor_web.py` |
+| Verificar Oracle | `python -m scripts.testar_banco` |
 | Validar CRUD no Oracle real | `python -m scripts.validar_crud_oracle` |
-| Validar pontos/resgates | `python -m scripts.validar_operacoes_oracle` |
-| Validar exportação JSON | `python -m scripts.validar_exportacao_oracle` |
-| Validar HTTP + Oracle real | `python -m scripts.validar_web_oracle` |
-| Importar JSON da Sprint 3 (opcional) | `python -m scripts.importar_json` |
-| Preparar esquema Oracle (apenas se necessário) | `python -m scripts.preparar_banco` |
+| Validar pontos e trocas | `python -m scripts.validar_operacoes_oracle` |
+| Validar JSON | `python -m scripts.validar_exportacao_oracle` |
+| Validar API HTTP + Oracle | `python -m scripts.validar_web_oracle` |
+| Validar área pessoal + Oracle | `python -m scripts.validar_area_pessoal_oracle` |
+| Testar Open-Meteo | `python -m scripts.validar_api_clima` |
+| Importar JSON antigo (opcional) | `python -m scripts.importar_json` |
+| Criar tabelas ausentes (somente se necessário) | `python -m scripts.preparar_banco` |
 
-**Atenção:** o Oracle já foi preparado e testado nas etapas anteriores. Não é necessário recriar as tabelas. Os scripts de validação do Oracle podem criar dados temporários; leia os avisos antes de confirmar.
+Os testes automatizados executados localmente usam um **adaptador SQLite que simula parte das operações Oracle**. Isso não substitui os testes de integração com o servidor real da FIAP. Os validadores podem criar e remover usuários temporários: leia as mensagens de confirmação antes de autorizá-los.
 
-O painel de demonstração permanece em `http://127.0.0.1:8765/`, com as mesmas rotas `/api/...`. Ao receber o front-end React real, usaremos o exemplo `integracao_react/zyraApi.ts` como referência para conectar as páginas. O front-end oficial **ainda não foi integrado**.
+## Comunicação com o front-end
 
-## Segurança e escopo
+- Backend: `http://127.0.0.1:8765`; executado com `python servidor_web.py`.
+- Front-end React/Vite: normalmente `http://localhost:5173`, usando proxy local `/api` para o backend.
+- CRUD, crédito de pontos, resgate, histórico, resumo, clima e acesso pessoal são atendidos pela API existente. **Não houve mudança nos contratos HTTP nesta revisão.**
+- O painel HTML em `http://127.0.0.1:8765/` ainda funciona, mas é apenas um exemplo. O React real fica no seu repositório separado.
 
-- O `.env` deve ficar na raiz e **nunca** ser publicado no GitHub nem enviado no ZIP.
-- O servidor HTTP está restrito a `127.0.0.1` e não implementa autenticação real. O cabeçalho `X-Zyra-Cliente` não substitui autenticação. Não o exponha à internet ou a uma rede sem proteção adequada.
-- O painel de demonstração acessa e modifica dados do Oracle. Para testes, utilize usuários fictícios.
-- A escolha de usuário por nome/ID sem senha, planejada para o futuro front-end, **não autentica ninguém**. Antes de liberar funções administrativas ou dados privados a usuários reais, o backend precisará validar identidades e permissões.
-- O arquivo `programa_sprint3_original.py` foi retirado do pacote ativo porque é apenas uma duplicação histórica. Ele continua disponível no ZIP e/ou histórico da Sprint 3. Nenhuma funcionalidade depende desse arquivo.
+**Escopo acadêmico local:** a seleção de cadastro por nome ou ID não comprova identidade; as rotas administrativas não têm autenticação. Não exponha esse backend à internet. A API Trilhos da ARTESP ainda não foi adicionada; a integração externa ativa é a Open-Meteo.
 
-## Regressão
+## Persistência, consultas e exportações
 
-O refactor mantém a suíte de testes das etapas anteriores e acrescenta verificações de caminhos e pontos de entrada. Testes locais com Oracle simulado não substituem a validação na conexão real da FIAP. Execute o comando `python -m scripts.validar_web_oracle` para conferir a integração após a reorganização; ele precisa das suas credenciais e acesso ao banco.
+- As operações SQL utilizam parâmetros vinculados, e os resgates descontam pontos e registram trocas na mesma transação.
+- `RepositorioOracle.listar_usuarios()` retorna os históricos completos por padrão. A variante `listar_usuarios(incluir_historico=False)` é usada nas listagens curtas, dispensando a consulta adicional à tabela de trocas.
+- A identificação por nome também utiliza uma listagem resumida e busca o histórico **somente** do usuário selecionado.
+- A importação opcional de JSON verifica a presença de cadastros sem carregar todas as linhas e seus históricos.
+- A opção de exportar JSON está no menu principal do terminal, na pasta `exportacoes/`. Ela apenas consulta o banco.
 
-## Atualização no mesmo repositório Git
+## Tratamento de erros
 
-Se você mantiver seu projeto Git atual, copie os novos arquivos para ele **preservando `.git` e `.env`**. Remova os módulos antigos da raiz (por exemplo, `banco.py`, `repositorio.py`, `menus.py`, `operacoes.py`, `api_clima.py`, `servico_web.py`, os `validar_*.py`, `importar_json.py`, `testar_banco.py`, `preparar_banco.py` e o SQL antigo da raiz), pois foram movidos para pacotes. Também remova a cópia `programa_sprint3_original.py` do pacote ativo; ela é histórica.
+- Erros de validação de usuário e pontos são tratados como `ValueError` e exibidos de forma compreensível.
+- Falhas na persistência recebem `ErroBanco`, preservando a exceção original como causa (`raise ... from ...`). Erros de programação típicos, como `TypeError` e `AttributeError`, não são ocultados sob uma mensagem genérica de banco.
+- O terminal encerra normalmente caso o usuário pressione `Ctrl+C` ou feche a entrada durante menus e pausas, fechando a conexão Oracle no bloco `finally`.
 
-Execute `git status` para conferir os arquivos movidos, depois `git add -A` e `git diff --cached --stat` para revisar o commit antes de registrá-lo. O Git pode detectar esses movimentos como renomeações; isso é esperado. Não inclua `.env` ou arquivos JSON exportados.
+## Testes por responsabilidade
+
+| Arquivo | Escopo |
+|---|---|
+| `test_cli_basico.py` | Entrada, menus e regras básicas |
+| `test_banco_configuracao.py` | Conexão, parâmetros e SQL |
+| `test_crud_oracle.py` | Cadastro, alteração, consulta e exclusão |
+| `test_pontos_passagens.py` | Créditos, resgates, limites e rollback |
+| `test_exportacao_json.py` | Arquivos JSON e integridade |
+| `test_api_clima.py` | Open-Meteo, validação e cache |
+| `test_api_http.py` | Rotas HTTP e painel local |
+| `test_area_pessoal.py` | Identificação e rotas pessoais |
+| `test_estrutura.py` | Caminhos, scripts e pontos de entrada |
+| `test_refinamento_backend.py` | Regras compartilhadas, consultas enxutas e falhas |
+
+## Atualização do repositório existente
+
+Para evitar conflitos com arquivos antigos, **prefira extrair o ZIP completo em uma pasta nova** e copiar seu `.env` e `.git` com cuidado. Se preferir aplicar apenas a atualização, use o pacote incremental e siga `INSTRUCOES_ATUALIZACAO.txt` para remover os caminhos antigos que foram movidos.
+
+Depois execute `python -m unittest discover -s tests -v`, `python -m scripts.validar_web_oracle` e `python -m scripts.validar_area_pessoal_oracle` no seu Windows, antes de realizar o commit.

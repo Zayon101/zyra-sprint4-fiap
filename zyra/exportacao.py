@@ -9,13 +9,14 @@ from datetime import datetime
 from pathlib import Path
 
 from zyra.core.relatorios import calcular_resumo
+from zyra.database.repositorio import RepositorioOracle
 
 
 PASTA_EXPORTACOES = Path(__file__).resolve().parents[1] / "exportacoes"
 TIPOS_EXPORTACAO = ("usuarios", "usuario", "historico", "resumo")
 
 
-def montar_consulta(repositorio, tipo, id_usuario=None):
+def montar_consulta(repositorio: RepositorioOracle, tipo: str, id_usuario: int | None = None) -> dict | None:
     """Consulta o Oracle e monta o documento a exportar.
 
     Retorna None para um ID inexistente, evitando gerar arquivo enganoso.
@@ -55,7 +56,10 @@ def _nome_arquivo(tipo, id_usuario=None):
     return f"zyra_{tipo}{referencia}_{momento}.json"
 
 
-def exportar_consulta(repositorio, tipo, id_usuario=None, pasta_destino=None):
+def exportar_consulta(
+    repositorio: RepositorioOracle, tipo: str, id_usuario: int | None = None,
+    pasta_destino: Path | None = None,
+) -> Path | None:
     """Executa SELECT e grava o JSON; retorna Path, ou None para ID ausente.
 
     Usa 'x' (criação exclusiva) para nunca sobrescrever um arquivo anterior.

@@ -13,7 +13,7 @@ from zyra.database.repositorio import ErroBanco, RepositorioOracle
 from tests.oracle_simulado import ConexaoSimulada
 
 
-class TestesEtapa3(unittest.TestCase):
+class TestesCrudOracle(unittest.TestCase):
     def setUp(self):
         self.conexao = ConexaoSimulada()
         self.repo = RepositorioOracle(self.conexao)

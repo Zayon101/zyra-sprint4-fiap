@@ -31,7 +31,7 @@ class TestesEstrutura(unittest.TestCase):
         self.assertEqual(len(ler_instrucoes_sql()), 3)
 
     def test_painel_web_resolve_arquivos(self):
-        self.assertEqual(PASTA_PAINEL, RAIZ / 'painel_web')
+        self.assertEqual(PASTA_PAINEL, RAIZ / 'examples' / 'painel_web')
         for nome in ('index.html', 'painel.js', 'painel.css'):
             with self.subTest(nome=nome):
                 self.assertTrue((PASTA_PAINEL / nome).is_file())

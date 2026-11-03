@@ -3,12 +3,13 @@
 from decimal import Decimal, ROUND_HALF_UP
 
 from zyra.core.constantes import PONTOS_POR_PASSAGEM, VALOR_PASSAGEM
+from zyra.core.modelos import Resumo, Usuario
 
 
 CENTAVOS = Decimal("0.01")
 
 
-def calcular_resumo(usuarios):
+def calcular_resumo(usuarios: list[Usuario]) -> Resumo:
     """Calcula indicadores a partir dos registros consultados no Oracle.
 
     O valor equivalente dos pontos segue a regra simulada do Zyra.

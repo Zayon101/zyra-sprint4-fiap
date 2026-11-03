@@ -1,12 +1,14 @@
 """Interações do CRUD de usuários; acesso SQL isolado em repositorio.py."""
 
 from zyra.core.constantes import BONUS_CADASTRO, VALOR_POR_PONTO
+from zyra.core.modelos import Usuario
+from zyra.database.repositorio import RepositorioOracle
 from zyra.cli.utils import formatar_reais, pausar, validar_nome, validar_numero
 
 
-def listar_usuarios(repositorio, pausar_ao_final=True):
+def listar_usuarios(repositorio: RepositorioOracle, pausar_ao_final: bool = True) -> list[Usuario]:
     """Exibe os cadastros consultados no Oracle e devolve os resultados."""
-    usuarios = repositorio.listar_usuarios()
+    usuarios = repositorio.listar_usuarios(incluir_historico=False)
     print("\n" + "=" * 40)
     print("           USUÁRIOS CADASTRADOS")
     print("=" * 40)

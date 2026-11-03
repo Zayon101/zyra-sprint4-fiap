@@ -8,7 +8,7 @@ from zyra.cli.operacoes import historico_trocas, resumo_sistema
 from zyra.database.repositorio import ErroBanco, RepositorioOracle
 
 
-def main():
+def main() -> None:
     """Abre uma conexão Oracle e controla os menus até a opção de sair."""
     try:
         conexao = conectar()
@@ -57,6 +57,8 @@ def main():
                 print(f"\nErro de banco: {erro}")
                 if erro.__cause__ is not None:
                     print(f"Detalhes técnicos: {erro.__cause__}")
+    except (EOFError, KeyboardInterrupt):
+        print("\nExecução interrompida pelo usuário.")
     finally:
         conexao.close()
 

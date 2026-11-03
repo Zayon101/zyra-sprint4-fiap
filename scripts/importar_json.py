@@ -7,6 +7,7 @@ os usuários e seus históricos, sem sobrescrever outros registros no banco.
 import json
 from decimal import Decimal, InvalidOperation
 
+from zyra.core.regras import validar_nome_usuario, validar_saldo
 from zyra.database.banco import conectar
 from zyra.core.constantes import ARQUIVO_DADOS
 from zyra.database.repositorio import ErroBanco, RepositorioOracle
@@ -30,10 +31,14 @@ def validar_arquivo_json(caminho):
         if type(id_antigo) is not int or id_antigo < 1 or id_antigo in ids:
             raise ValueError(f"Cadastro {indice} possui ID inválido ou repetido.")
         ids.add(id_antigo)
-        if not isinstance(nome, str) or not 3 <= len(nome.strip()) <= 120:
-            raise ValueError(f"Cadastro {indice} possui nome inválido.")
-        if type(pontos) is not int or not 0 <= pontos <= 999999999999:
-            raise ValueError(f"Cadastro {indice} possui saldo inválido.")
+        try:
+            validar_nome_usuario(nome)
+        except ValueError as erro:
+            raise ValueError(f"Cadastro {indice} possui nome inválido.") from erro
+        try:
+            validar_saldo(pontos)
+        except ValueError as erro:
+            raise ValueError(f"Cadastro {indice} possui saldo inválido.") from erro
         if not isinstance(historico, list):
             raise ValueError(f"Cadastro {indice} possui histórico inválido.")
         for troca in historico:
@@ -56,7 +61,7 @@ def validar_arquivo_json(caminho):
 
 def importar_no_oracle(repositorio, usuarios):
     """Insere cadastros e trocas numa única transação, somente em base vazia."""
-    if repositorio.listar_usuarios():
+    if repositorio.possui_usuarios():
         raise ValueError(
             "Importação cancelada: já existem usuários no Oracle. "
             "Não serão criados cadastros duplicados."

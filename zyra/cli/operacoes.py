@@ -1,23 +1,23 @@
 """Pontos, passagens, histórico e estatísticas usando o banco Oracle."""
 
 from zyra.core.constantes import TIPOS_PASSAGEM, VALOR_PASSAGEM, VALOR_POR_PONTO
-from zyra.cli.usuarios import listar_usuarios
 from zyra.core.relatorios import calcular_resumo
 from zyra.cli.utils import formatar_data_troca, formatar_reais, pausar, validar_numero
 
 
 def escolher_usuario(repositorio):
     """Escolhe um usuário válido e retorna seu dicionário ou None."""
-    usuarios = repositorio.listar_usuarios()
+    usuarios = repositorio.listar_usuarios(incluir_historico=False)
     if not usuarios:
         print("Nenhum usuário cadastrado.")
         return None
     if len(usuarios) == 1:
         usuario = usuarios[0]
         print(f"\nUsuário selecionado automaticamente: ID {usuario['id']} - {usuario['nome']}")
-        return usuario
+        return repositorio.consultar_usuario(usuario["id"])
 
-    listar_usuarios(repositorio, False)
+    for usuario in usuarios:
+        print(f"ID {usuario['id']} - {usuario['nome']}")
     while True:
         id_usuario = validar_numero("\nDigite o ID do usuário: ")
         usuario = repositorio.consultar_usuario(id_usuario)
@@ -50,7 +50,7 @@ def adicionar_pontos(repositorio):
     pausar()
 
 
-def mostrar_passagens():
+def mostrar_passagens() -> None:
     """Exibe a tabela fixa de passagens (não depende do banco)."""
     print("\n" + "=" * 40)
     print("           PASSAGENS DISPONÍVEIS")

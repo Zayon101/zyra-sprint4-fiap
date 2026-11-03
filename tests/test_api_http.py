@@ -11,7 +11,7 @@ from zyra.database.repositorio import RepositorioOracle
 from zyra.web.servidor import criar_servidor
 from zyra.web.servico import ErroRequisicao, ServicoZyra
 from tests.oracle_simulado import ConexaoSimulada
-from tests.test_etapa6 import DADOS
+from tests.test_api_clima import DADOS
 from zyra.integrations.api_clima import processar_resposta
 
 

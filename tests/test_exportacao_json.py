@@ -15,7 +15,7 @@ from zyra.database.repositorio import ErroBanco, RepositorioOracle
 from tests.oracle_simulado import ConexaoSimulada
 
 
-class TestesEtapa5(unittest.TestCase):
+class TestesExportacaoJson(unittest.TestCase):
     def setUp(self):
         self.conexao = ConexaoSimulada()
         self.repo = RepositorioOracle(self.conexao)
@@ -178,7 +178,7 @@ class TestesEtapa5(unittest.TestCase):
         self.assertTrue(self.conexao.fechada)
 
 
-class TestesValidadorOracleEtapa5(unittest.TestCase):
+class TestesValidadorExportacao(unittest.TestCase):
     """Testa o roteiro de validação real usando uma conexão simulada."""
 
     def test_validador_sem_cadastros(self):

@@ -1,27 +1,26 @@
 """Validações, formatação e auxiliares reutilizados pelos demais módulos."""
 
-from zyra.core.constantes import MAX_CARACTERES_NOME
+from datetime import datetime
+
+from zyra.core.regras import validar_nome_usuario
 
 
-def formatar_reais(valor):
+def formatar_reais(valor: float) -> str:
     """Recebe um valor numérico e retorna o valor formatado em reais."""
     return f"R$ {valor:.2f}".replace(".", ",")
 
 
-def validar_nome(mensagem="Digite o nome do usuário: "):
-    """Solicita e retorna um nome válido."""
-    # Repete a entrada até que um nome válido seja informado
+def validar_nome(mensagem: str = "Digite o nome do usuário: ") -> str:
+    """Solicita o nome e usa exatamente a validação de negócio da API."""
     while True:
-        nome = input(mensagem).strip()
-
-        # Remove os espaços apenas para verificar se o restante possui somente letras
-        if 3 <= len(nome) <= MAX_CARACTERES_NOME and nome.replace(" ", "").isalpha():
-            return nome
-
-        print(f"Erro: informe de 3 a {MAX_CARACTERES_NOME} letras (espaços permitidos).")
+        nome = input(mensagem)
+        try:
+            return validar_nome_usuario(nome)
+        except ValueError as erro:
+            print(f"Erro: {erro}")
 
 
-def validar_numero(mensagem):
+def validar_numero(mensagem: str) -> int:
     """Solicita e retorna um número inteiro validado."""
     numero_texto = input(mensagem).strip()
 
@@ -33,16 +32,14 @@ def validar_numero(mensagem):
     return int(numero_texto)
 
 
-def pausar():
+def pausar() -> None:
     """Pausa a execução até o usuário pressionar ENTER."""
     input("\nPressione ENTER para continuar...")
 
 
 
-def formatar_data_troca(data):
+def formatar_data_troca(data: datetime | str) -> str:
     """Formata uma data retornada pelo Oracle (ou texto ISO nos testes)."""
-    from datetime import datetime
-
     if isinstance(data, datetime):
         return data.strftime("%d/%m/%Y %H:%M:%S")
     if isinstance(data, str):

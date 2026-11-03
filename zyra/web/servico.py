@@ -44,7 +44,7 @@ class ServicoZyra:
         self._clima_lock = Lock()
 
     @staticmethod
-    def _id(texto):
+    def _id(texto: str) -> int:
         if not texto.isascii() or not texto.isdecimal() or int(texto) < 1:
             raise ErroRequisicao(404, "Recurso não encontrado.")
         return int(texto)
@@ -56,11 +56,23 @@ class ServicoZyra:
         return dados
 
     @staticmethod
-    def _usuario(repo, id_usuario):
+    def _usuario(repo: RepositorioOracle, id_usuario: int):
         usuario = repo.consultar_usuario(id_usuario)
         if usuario is None:
             raise ErroRequisicao(404, "Usuário não encontrado.")
         return usuario
+
+    def listar_identificadores(self) -> list[dict]:
+        """Lista IDs e nomes para identificação demonstrativa, sem históricos.
+
+        Método interno: não cria um endpoint público novo e evita transferir
+        todos os resgates apenas para comparar um nome.
+        """
+        try:
+            with self._repositorio_factory() as repo:
+                return repo.listar_usuarios(incluir_historico=False)
+        except ErroBanco as erro:
+            raise ErroRequisicao(503, "Erro ao consultar o Oracle. Verifique a conexão.") from erro
 
     def processar(self, metodo, rota, dados=None):
         """Retorna (codigo_HTTP, resposta_JSON) sem iniciar o servidor."""

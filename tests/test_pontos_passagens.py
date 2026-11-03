@@ -15,7 +15,7 @@ from tests.oracle_simulado import ConexaoSimulada
 from zyra.cli.utils import formatar_data_troca, validar_nome
 
 
-class TestesEtapa4(unittest.TestCase):
+class TestesPontosPassagens(unittest.TestCase):
     def setUp(self):
         self.conexao = ConexaoSimulada()
         self.repo = RepositorioOracle(self.conexao)

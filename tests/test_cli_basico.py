@@ -10,7 +10,7 @@ from zyra.core import constantes
 from zyra.cli.utils import formatar_reais, validar_nome, validar_numero
 
 
-class TestesEtapa1(unittest.TestCase):
+class TestesCliBasico(unittest.TestCase):
     def test_importar_main_nao_inicia_interface(self):
         with patch("builtins.input", side_effect=AssertionError("Não deve iniciar")):
             with contextlib.redirect_stdout(io.StringIO()) as saida:

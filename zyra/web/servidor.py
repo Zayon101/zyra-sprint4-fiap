@@ -1,25 +1,29 @@
 """Servidor HTTP local do Zyra para demonstrar integração web com o Oracle.
 
 Execute `python servidor_web.py` e abra http://127.0.0.1:8765/.
-Restrito à própria máquina: não há autenticação de usuários neste protótipo.
+Restrito à própria máquina: sessões pessoais demonstrativas, sem autenticação real.
+Os endpoints administrativos continuam sem autenticação.
 """
 
 import argparse
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.cookies import SimpleCookie, CookieError
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from zyra.web.servico import ErroRequisicao, ServicoZyra
+from zyra.web.pessoal import COOKIE_NOME, ServicoPessoal
 
 
-PASTA_PAINEL = Path(__file__).resolve().parents[2] / "painel_web"
+PASTA_PAINEL = Path(__file__).resolve().parents[2] / "examples" / "painel_web"
 TAMANHO_MAX_JSON = 16 * 1024
 
 
 def criar_servidor(porta=8765, servico=None):
     """Inicializa servidor somente em loopback; aceita serviço injetável para testes."""
     app = servico if servico is not None else ServicoZyra()
+    pessoal = ServicoPessoal(app)
     origens = {
         f"http://127.0.0.1:{porta}", f"http://localhost:{porta}",
         "http://127.0.0.1:5173", "http://localhost:5173",  # React/Vite local
@@ -28,7 +32,7 @@ def criar_servidor(porta=8765, servico=None):
     class Roteador(BaseHTTPRequestHandler):
         """Adapta HTTP/JSON ao serviço de regras da aplicação."""
 
-        def _cabecalhos(self, codigo, formato="application/json; charset=utf-8", tamanho=0):
+        def _cabecalhos(self, codigo, formato="application/json; charset=utf-8", tamanho=0, cookie=None):
             self.send_response(codigo)
             self.send_header("Content-Type", formato)
             self.send_header("Content-Length", str(tamanho))
@@ -36,6 +40,8 @@ def criar_servidor(porta=8765, servico=None):
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "no-referrer")
             self.send_header("Vary", "Origin")
+            if cookie is not None:
+                self.send_header("Set-Cookie", cookie)
             origem = self.headers.get("Origin")
             if origem in origens:
                 self.send_header("Access-Control-Allow-Origin", origem)
@@ -43,9 +49,9 @@ def criar_servidor(porta=8765, servico=None):
                 self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Zyra-Cliente")
             self.end_headers()
 
-        def _json(self, codigo, objeto):
+        def _json(self, codigo, objeto, cookie=None):
             texto = json.dumps(objeto, ensure_ascii=False, allow_nan=False).encode("utf-8")
-            self._cabecalhos(codigo, tamanho=len(texto))
+            self._cabecalhos(codigo, tamanho=len(texto), cookie=cookie)
             self.wfile.write(texto)
 
         def _erro(self, codigo, mensagem):
@@ -99,6 +105,19 @@ def criar_servidor(porta=8765, servico=None):
                 dados = self._corpo_json() if self.command in ("POST", "PATCH") else None
             else:
                 dados = None
+            if rota.startswith("/api/pessoal/"):
+                cookie_bruto = self.headers.get("Cookie", "")
+                token = None
+                try:
+                    cookies = SimpleCookie()
+                    cookies.load(cookie_bruto[:2048])
+                    if COOKIE_NOME in cookies:
+                        token = cookies[COOKIE_NOME].value
+                except CookieError:
+                    pass
+                codigo, resposta, cookie_resposta = pessoal.processar(self.command, rota, dados, token)
+                self._json(codigo, resposta, cookie_resposta)
+                return
             codigo, resposta = app.processar(self.command, rota, dados)
             self._json(codigo, resposta)
 

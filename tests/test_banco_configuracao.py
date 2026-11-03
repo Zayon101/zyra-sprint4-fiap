@@ -17,7 +17,7 @@ from scripts.preparar_banco import ler_instrucoes_sql, preparar_estrutura
 from scripts.testar_banco import TABELAS_ESPERADAS, verificar_conexao
 
 
-class TestesEtapa2(unittest.TestCase):
+class TestesBancoConfiguracao(unittest.TestCase):
     def configuracao(self, **variacoes):
         dados = {
             "ORACLE_USER": "rm_aluno",
