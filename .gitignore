@@ -1,0 +1,4 @@
+# Credenciais locais (contêm senha em texto simples). NÃO versionar.
+conexao_oracle.local.json
+# Exportações geradas (opcionais, se forem movidas para esta pasta)
+__pycache__/

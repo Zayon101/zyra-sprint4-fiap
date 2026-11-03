@@ -1,7 +1,7 @@
 """ZYRA — Sprint 4 | Entrada única para terminal, Oracle e página web.
 
 Execute: python main.py
-O acesso ao Oracle é configurado interativamente, sem gravar senhas.
+O Oracle pode reconectar automaticamente com credenciais salvas localmente.
 """
 
 from contextlib import contextmanager
@@ -15,7 +15,10 @@ from api.servico import ServicoZyra
 from sistema.clima import menu_clima
 from sistema.menus import exibir_boas_vindas, exibir_menu, menu_crud, menu_exportacao, menu_operacoes
 from sistema.operacoes import historico_trocas, resumo_sistema
-from sql.conexao import ConfiguracaoBanco, conectar
+from sql.conexao import (
+    ARQUIVO_CONEXAO, ConfiguracaoBanco, carregar_conexao_local,
+    conectar, salvar_conexao_local,
+)
 from sql.estrutura import preparar_estrutura, situacao_tabelas
 from sql.repositorio import ErroBanco, RepositorioOracle
 
@@ -71,8 +74,51 @@ class Zyra:
         self.thread_web: Thread | None = None
         self.clima = CatalogoClima()
 
+    def _ativar_conexao(self, configuracao: ConfiguracaoBanco, nova_conexao) -> None:
+        """Substitui a sessão Oracle sem deixar a web usando a conexão antiga."""
+        self.encerrar_web()
+        if self.conexao is not None:
+            self.conexao.close()
+        self.conexao = nova_conexao
+        self.configuracao = configuracao
+        self.repositorio = RepositorioOracle(nova_conexao)
+        self.tabelas_prontas = False
+
+    def _verificar_tabelas(self) -> None:
+        """Informa se as tabelas necessárias estão acessíveis na sessão atual."""
+        try:
+            situacao = situacao_tabelas(self.conexao)
+            for tabela, existe in situacao.items():
+                print(f"[{'OK' if existe else 'FALTA'}] {tabela}")
+            self.tabelas_prontas = all(situacao.values())
+            if not self.tabelas_prontas:
+                print("Para usar o CRUD, escolha [7] e autorize a criação das tabelas.")
+        except Exception as erro:
+            self.tabelas_prontas = False
+            print(f"Não foi possível confirmar a estrutura: {erro}")
+
+    def conectar_automaticamente(self) -> None:
+        """Tenta a conexão salva uma vez, sem interromper a abertura do menu."""
+        try:
+            configuracao = carregar_conexao_local()
+        except ValueError as erro:
+            print(f"\n[AVISO] {erro} Use [7] para configurar novamente.")
+            return
+        if configuracao is None:
+            return
+        print(f"\nTentando conectar ao Oracle com a configuração salva ({configuracao.usuario})...")
+        try:
+            nova_conexao = conectar(configuracao)
+        except Exception as erro:
+            print(f"[AVISO] Conexão automática falhou: {erro}")
+            print("O menu continuará disponível. Use [7] para atualizar a conexão.")
+            return
+        self._ativar_conexao(configuracao, nova_conexao)
+        print(f"[OK] Conectado automaticamente ao Oracle: {configuracao.usuario}.")
+        self._verificar_tabelas()
+
     def conectar_sql(self) -> None:
-        """Testa credenciais, conserva a conexão anterior se a nova falhar."""
+        """Solicita e testa credenciais, oferecendo salvamento local opcional."""
         try:
             configuracao = solicitar_configuracao()
             nova_conexao = conectar(configuracao)
@@ -80,32 +126,30 @@ class Zyra:
             print(f"\nNão foi possível conectar ao Oracle: {erro}")
             return
 
-        # A troca de conexão não deve deixar o servidor apontando para o banco antigo.
-        self.encerrar_web()
-        if self.conexao is not None:
-            self.conexao.close()
-        self.conexao = nova_conexao
-        self.configuracao = configuracao
-        self.repositorio = RepositorioOracle(nova_conexao)
+        self._ativar_conexao(configuracao, nova_conexao)
         print(f"\n[OK] Conexão estabelecida com o usuário {configuracao.usuario}.")
-        print("As credenciais ficam somente na memória durante esta execução.")
-
-        if confirmou("Deseja criar/verificar as tabelas Zyra agora? [s/N]: "):
-            try:
-                preparar_estrutura(self.conexao)
-            except Exception as erro:
-                print(f"\nFalha ao preparar as tabelas: {erro}")
-                print("Verifique as permissões CREATE TABLE e CREATE INDEX do seu usuário.")
+        print("Atenção: a opção de salvar guarda a senha em texto simples no computador.")
         try:
-            situacao = situacao_tabelas(self.conexao)
-            for tabela, existe in situacao.items():
-                print(f"[{'OK' if existe else 'FALTA'}] {tabela}")
-            self.tabelas_prontas = all(situacao.values())
-            if not self.tabelas_prontas:
-                print("Para usar o CRUD, conecte novamente e autorize a criação das tabelas.")
-        except Exception as erro:
-            self.tabelas_prontas = False
-            print(f"Não foi possível confirmar a estrutura: {erro}")
+            if confirmou("Deseja salvar a conexão para iniciar automaticamente depois? [s/N]: "):
+                try:
+                    salvar_conexao_local(configuracao)
+                except OSError as erro:
+                    print(f"Não foi possível salvar a configuração: {erro}")
+                else:
+                    print(f"[OK] Conexão salva em {ARQUIVO_CONEXAO.relative_to(ARQUIVO_CONEXAO.parents[1])}.")
+                    print("Não compartilhe esse arquivo nem o envie ao GitHub.")
+            elif ARQUIVO_CONEXAO.exists():
+                print("A configuração salva anteriormente foi mantida para a próxima execução.")
+
+            if confirmou("Deseja criar/verificar as tabelas Zyra agora? [s/N]: "):
+                try:
+                    preparar_estrutura(self.conexao)
+                except Exception as erro:
+                    print(f"\nFalha ao preparar as tabelas: {erro}")
+                    print("Verifique as permissões CREATE TABLE e CREATE INDEX do seu usuário.")
+        except (EOFError, KeyboardInterrupt):
+            print("\nConfiguração opcional interrompida; conexão atual mantida.")
+        self._verificar_tabelas()
 
     def repositorio_ativo(self) -> RepositorioOracle | None:
         """Bloqueia apenas operações que dependem das tabelas SQL."""
@@ -169,6 +213,7 @@ class Zyra:
         """Menu principal da Sprint 3 com SQL e web como novas opções."""
         try:
             exibir_boas_vindas()
+            self.conectar_automaticamente()
             while True:
                 exibir_menu()
                 print("[SQL: conectado]" if self.tabelas_prontas else "[SQL: não preparado]")

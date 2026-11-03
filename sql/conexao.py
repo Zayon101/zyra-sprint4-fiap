@@ -1,12 +1,16 @@
-"""Conexão com Oracle. Credenciais são informadas no menu principal.
+"""Conexão Oracle e armazenamento *opcional* de credenciais locais.
 
-O argumento de conectar() é a configuração da sessão atual; nenhuma senha
-é gravada no projeto. O modo sem argumento usa variáveis de ambiente, se
-algum integrador externo quiser configurar o servidor dessa maneira.
+O armazenamento é feito em JSON, com senha em texto simples, somente após
+consentimento explícito. Não compartilhe o arquivo com terceiros ou no Git.
 """
 
+import json
 import os
-from dataclasses import dataclass, field
+import tempfile
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+
+ARQUIVO_CONEXAO = Path(__file__).resolve().parent.parent / "sistema" / "conexao_oracle.local.json"
 
 
 @dataclass(frozen=True)
@@ -19,6 +23,60 @@ class ConfiguracaoBanco:
     porta: int = 1521
     servico: str = ""
     sid: str = ""
+
+
+def salvar_conexao_local(configuracao: ConfiguracaoBanco, caminho: Path = ARQUIVO_CONEXAO) -> None:
+    """Grava as credenciais locais sob consentimento, com escrita atômica.
+
+    Atenção: senha armazenada em texto simples; permissões são limitadas
+    ao usuário atual quando o sistema operacional oferece esse recurso.
+    """
+    caminho = Path(caminho)
+    caminho.parent.mkdir(parents=True, exist_ok=True)
+    temporario = None
+    try:
+        descritor, temporario = tempfile.mkstemp(prefix=".zyra-oracle-", suffix=".tmp", dir=caminho.parent)
+        with os.fdopen(descritor, "w", encoding="utf-8") as arquivo:
+            json.dump(asdict(configuracao), arquivo, ensure_ascii=False, indent=2)
+            arquivo.write("\n")
+        os.replace(temporario, caminho)
+    finally:
+        if temporario is not None:
+            Path(temporario).unlink(missing_ok=True)
+
+
+def carregar_conexao_local(caminho: Path = ARQUIVO_CONEXAO) -> ConfiguracaoBanco | None:
+    """Retorna uma configuração salva, ou None caso não haja arquivo."""
+    caminho = Path(caminho)
+    try:
+        dados = json.loads(caminho.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+    except (OSError, UnicodeError, json.JSONDecodeError) as erro:
+        raise ValueError("O arquivo de conexão salvo não pôde ser lido.") from erro
+    if not isinstance(dados, dict):
+        raise ValueError("O arquivo de conexão salvo possui formato inválido.")
+    chaves = {"usuario", "senha", "host", "porta", "servico", "sid"}
+    if set(dados) != chaves:
+        raise ValueError("O arquivo de conexão salvo está incompleto ou inválido.")
+    if (not all(isinstance(dados[campo], str) for campo in chaves - {"porta"})
+            or type(dados["porta"]) is not int):
+        raise ValueError("O arquivo de conexão salvo possui campos inválidos.")
+    configuracao = ConfiguracaoBanco(**dados)
+    if (not configuracao.usuario.strip() or not configuracao.senha or not configuracao.host.strip()
+            or bool(configuracao.sid) == bool(configuracao.servico)
+            or not 1 <= configuracao.porta <= 65535):
+        raise ValueError("O arquivo de conexão salvo possui parâmetros inválidos.")
+    return configuracao
+
+
+def excluir_conexao_local(caminho: Path = ARQUIVO_CONEXAO) -> bool:
+    """Apaga o arquivo salvo, se existir (sem encerrar a sessão atual)."""
+    try:
+        Path(caminho).unlink()
+    except FileNotFoundError:
+        return False
+    return True
 
 
 def carregar_configuracao() -> ConfiguracaoBanco:
