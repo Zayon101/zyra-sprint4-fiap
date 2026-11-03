@@ -20,9 +20,9 @@ PASTA_FRONTEND = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 TAMANHO_MAX_JSON = 16 * 1024
 
 
-def criar_servidor(porta=8765, servico=None):
+def criar_servidor(porta=8765, servico=None, banco_disponivel=True):
     """Inicializa servidor somente em loopback; aceita serviço injetável para testes."""
-    app = servico if servico is not None else ServicoZyra()
+    app = servico if servico is not None else ServicoZyra(banco_disponivel=banco_disponivel)
     pessoal = ServicoPessoal(app)
     origens = {
         f"http://127.0.0.1:{porta}", f"http://localhost:{porta}",
@@ -93,7 +93,10 @@ def criar_servidor(porta=8765, servico=None):
                     "a{color:#1e6b5d}code{background:#f1f3f5;padding:3px 5px}</style>"
                     "</head><body><main><h1>Zyra 🚇</h1>"
                     "<h2>Servidor web funcionando!</h2>"
-                    "<p>A interface React será adicionada posteriormente. "
+                    + ("<p style='color:#914d00'><strong>Oracle ainda não preparado.</strong> "
+                       "O painel pode abrir, mas cadastros, saldos e históricos "
+                       "precisam da conexão no menu [7].</p>" if not banco_disponivel else "")
+                    + "<p>A interface React será adicionada posteriormente. "
                     "A API Python já está disponível neste endereço.</p>"
                     "<p><a href='/api/status'>Testar status da API</a> · "
                     "<a href='/api/passagens'>Consultar passagens</a></p>"

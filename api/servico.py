@@ -38,10 +38,11 @@ def acesso_oracle():
 class ServicoZyra:
     """Regras de endpoints independentes de sockets, permitindo testes locais."""
 
-    def __init__(self, repositorio_factory=None, catalogo_clima=None):
+    def __init__(self, repositorio_factory=None, catalogo_clima=None, banco_disponivel=True):
         self._repositorio_factory = repositorio_factory or acesso_oracle
         self._clima = catalogo_clima or CatalogoClima()
         self._clima_lock = Lock()
+        self._banco_disponivel = banco_disponivel
 
     @staticmethod
     def _id(texto: str) -> int:
@@ -78,7 +79,8 @@ class ServicoZyra:
         """Retorna (codigo_HTTP, resposta_JSON) sem iniciar o servidor."""
         partes = [p for p in rota.split("/") if p]
         if partes == ["api", "status"] and metodo == "GET":
-            return 200, {"status": "ok", "servico": "Zyra API local"}
+            return 200, {"status": "ok", "servico": "Zyra API local",
+                         "oracle": "conectado" if self._banco_disponivel else "indisponivel"}
         if partes == ["api", "passagens"] and metodo == "GET":
             return 200, {
                 "pontos_por_passagem": PONTOS_POR_PASSAGEM,
