@@ -68,6 +68,7 @@ def menu_clima(catalogo=None):
             break
         if opcao not in (1, 2, 3):
             print("\nOpção inválida.")
+            pausar()
             continue
         try:
             restante = catalogo.segundos_para_atualizar() if opcao == 3 else 0

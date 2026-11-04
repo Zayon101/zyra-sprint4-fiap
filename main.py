@@ -62,6 +62,7 @@ from api.servico import ServicoZyra
 from sistema.clima import menu_clima
 from sistema.menus import exibir_boas_vindas, exibir_menu, menu_crud, menu_exportacao, menu_operacoes
 from sistema.operacoes import historico_trocas, resumo_sistema
+from sistema.utils import pausar
 from sql.conexao import (
     ARQUIVO_CONEXAO, ConfiguracaoBanco, carregar_conexao_local,
     conectar, salvar_conexao_local, excluir_conexao_local,
@@ -272,6 +273,7 @@ class Zyra:
                     self._verificar_tabelas()
                 else:
                     print("Opção inválida.")
+                pausar()
             except (KeyboardInterrupt, EOFError):
                 print("\nRetornando ao menu principal.")
                 return
@@ -358,6 +360,7 @@ class Zyra:
                     opcao = int(input("Escolha uma opção: "))
                 except ValueError:
                     print("\nErro: digite apenas números.")
+                    pausar()
                     continue
                 try:
                     if opcao == 0:
@@ -367,11 +370,13 @@ class Zyra:
                         self.conectar_sql()
                     elif opcao == 8:
                         self.abrir_web()
+                        pausar()
                     elif opcao == 6:
                         menu_clima(self.clima)
                     elif opcao in (1, 2, 3, 4, 5):
                         repositorio = self.repositorio_ativo()
                         if repositorio is None:
+                            pausar()
                             continue
                         match opcao:
                             case 1: menu_crud(repositorio)
@@ -381,8 +386,10 @@ class Zyra:
                             case 5: menu_exportacao(repositorio)
                     else:
                         print("\nOpção inválida.")
+                        pausar()
                 except (ValueError, ErroBanco) as erro:
                     print(f"\nNão foi possível concluir a operação: {erro}")
+                    pausar()
         except (KeyboardInterrupt, EOFError):
             print("\nExecução encerrada pelo usuário.")
         finally:

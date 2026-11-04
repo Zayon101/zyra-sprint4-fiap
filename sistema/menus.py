@@ -37,6 +37,7 @@ def menu_crud(repositorio):
                 print("\nVoltando ao menu principal...")
             case _:
                 print("\nOpção inválida.")
+                pausar()
 
 
 def menu_operacoes(repositorio):
@@ -64,6 +65,7 @@ def menu_operacoes(repositorio):
                 print("\nVoltando ao menu principal...")
             case _:
                 print("\nOpção inválida.")
+                pausar()
 
 
 def menu_exportacao(repositorio):
@@ -86,6 +88,7 @@ def menu_exportacao(repositorio):
             continue
         if opcao not in tipos:
             print("\nOpção inválida.")
+            pausar()
             continue
 
         id_usuario = None
