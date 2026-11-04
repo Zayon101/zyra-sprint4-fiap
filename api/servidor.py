@@ -45,6 +45,13 @@ def criar_servidor(porta=8765, servico=None, banco_disponivel=True):
     class Roteador(BaseHTTPRequestHandler):
         """Adapta HTTP/JSON ao serviço de regras da aplicação."""
 
+        def log_request(self, code="-", size="-") -> None:
+            """Oculta o log de acessos HTTP para não interferir no menu interativo.
+
+            Erros reais continuam usando o tratamento padrão de log_error().
+            """
+            return
+
         def _cabecalhos(self, codigo, formato="application/json; charset=utf-8", tamanho=0, cookie=None):
             self.send_response(codigo)
             self.send_header("Content-Type", formato)
