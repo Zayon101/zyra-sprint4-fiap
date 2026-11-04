@@ -1,0 +1,26 @@
+ZYRA — SPRINT 4 | FIAP 2026
+
+INTEGRANTES — TURMA 1TDSPH
+Carolina Kotz Rodrigues — RM 571876
+Felipe Motitsuki Tan — RM 570770
+Gabriel Feitosa de Lima — RM 573026
+João Gabriel Dantas Moura — RM 573101
+Záyon Alves Marques — RM 571205
+
+VÍDEO DE APRESENTAÇÃO
+Link do YouTube: https://youtu.be/BV1OGFuA_Ic
+
+COMO EXECUTAR
+1. Entre na pasta "programa" e execute: python main.py
+2. No menu [7], configure a conexão com o seu Oracle e prepare as tabelas.
+3. No menu [8], inicie a página web e acesse: http://127.0.0.1:8765/painel
+
+O React compilado (dist) já está incluído e pode ser aberto pelo menu [8].
+Para recompilar o React, entre em frontend/zyra-app e, com o node.js instalado, execute:
+   npm ci
+   npm run build
+
+Depois, atualize a página. O projeto tenta instalar automaticamente bibliotecas Python ausentes; a primeira execução pode exigir internet.
+
+NOTA DE SEGURANÇA
+As credenciais do Oracle não acompanham esta entrega. Configure no menu [7].
