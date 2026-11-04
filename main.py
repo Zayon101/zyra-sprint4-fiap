@@ -4,14 +4,60 @@ Execute: python main.py
 O Oracle pode reconectar automaticamente com credenciais salvas localmente.
 """
 
+import importlib
+import importlib.util
+from pathlib import Path
+import subprocess
+import sys
+
+
+def verificar_dependencias() -> None:
+    """Instala as dependências Python ausentes antes de importar o sistema."""
+    modulos = ("requests", "oracledb")
+    ausentes = [nome for nome in modulos if importlib.util.find_spec(nome) is None]
+    if not ausentes:
+        return
+
+    requisitos = Path(__file__).resolve().parent / "sistema" / "requirements.txt"
+    print(f"\n[ZYRA] Dependências ausentes: {', '.join(ausentes)}")
+
+    if not requisitos.is_file():
+        print(f"[ERRO] Arquivo de dependências não encontrado: {requisitos}")
+        raise SystemExit(1)
+
+    print("[ZYRA] Instalando dependências automaticamente...")
+    print("[ZYRA] É necessária conexão com a internet na primeira instalação.\n")
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-r", str(requisitos)],
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as erro:
+        print(f"\n[ERRO] Não foi possível instalar as dependências: {erro}")
+        print(f'Execute manualmente: "{sys.executable}" -m pip install -r "{requisitos}"')
+        raise SystemExit(1) from erro
+
+    importlib.invalidate_caches()
+    pendentes = [nome for nome in modulos if importlib.util.find_spec(nome) is None]
+    if pendentes:
+        print(f"[ERRO] As bibliotecas ainda não estão disponíveis: {', '.join(pendentes)}")
+        print(f"Verifique o ambiente Python em uso: {sys.executable}")
+        raise SystemExit(1)
+
+    print("[OK] Dependências instaladas. Iniciando o Zyra...\n")
+
+
+if __name__ == "__main__":
+    verificar_dependencias()
+
+
 from contextlib import contextmanager
 from getpass import getpass
 from threading import Thread
-from pathlib import Path
 import webbrowser
 
 from api.clima import CatalogoClima
-from api.servidor import criar_servidor, localizar_frontend
+from api.servidor import criar_servidor
 from api.servico import ServicoZyra
 from sistema.clima import menu_clima
 from sistema.menus import exibir_boas_vindas, exibir_menu, menu_crud, menu_exportacao, menu_operacoes
@@ -269,14 +315,6 @@ class Zyra:
                 print(f"\nNão foi possível iniciar a página web: {erro}")
                 return
             print("\n[OK] Servidor web iniciado.")
-            pasta_react = localizar_frontend()
-            if pasta_react:
-                print(f"[OK] Interface React encontrada: {pasta_react.relative_to(Path(__file__).resolve().parent)}")
-            else:
-                print("[AVISO] React compilado não encontrado. Para ativá-lo:")
-                print("        cd frontend/zyra-app")
-                print("        npm run build")
-                print("        Depois, atualize a página no navegador.")
             if not banco_disponivel:
                 print("[AVISO] Sem Oracle preparado: página, clima e passagens disponíveis;")
                 print("        consultas e alterações de usuários retornarão HTTP 503.")
